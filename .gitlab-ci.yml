@@ -10,13 +10,10 @@ stages:
     max: 2
     when:
       - always
-  tags: [docker]
+  tags:
+    - docker
   services:
     - name: docker:dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
   before_script:
     - docker info
   script:
@@ -34,10 +31,13 @@ build-nextjs-service:
     IMAGE_NAME: ms-nextjs-service
     IMAGE_TAG: v1.0.0
     DOCKERFILE_PATH: ./frontend
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-      # changes:
-      #   - frontend/**
+# changes:
+#   - frontend/**
 
 build-auth-service:
   <<: *default-build-image
@@ -46,6 +46,9 @@ build-auth-service:
     IMAGE_NAME: ms-auth-service
     IMAGE_TAG: v1.0.0
     DOCKERFILE_PATH: ./backend/auth
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
       # changes:
@@ -58,6 +61,9 @@ build-user-service:
     IMAGE_NAME: ms-user-service
     IMAGE_TAG: v1.0.0
     DOCKERFILE_PATH: ./backend/user
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
       # changes:

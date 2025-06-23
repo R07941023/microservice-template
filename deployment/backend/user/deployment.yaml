@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-user
+  labels:
+    app: ms-user
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ms-user
+  template:
+    metadata:
+      labels:
+        app: ms-user
+    spec:
+      containers:
+        - name: ms-user
+          image: yenyinglu/ms-user:v1.0.0
+          ports:
+            - containerPort: 8000
