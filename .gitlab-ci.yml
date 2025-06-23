@@ -36,8 +36,8 @@ build-nextjs-service:
     DOCKERFILE_PATH: ./frontend
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-      changes:
-        - frontend/**
+      # changes:
+      #   - frontend/**
 
 build-auth-service:
   <<: *default-build-image
@@ -48,21 +48,20 @@ build-auth-service:
     DOCKERFILE_PATH: ./backend/auth
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-      changes:
-        - backend/auth/**
+      # changes:
+      #   - backend/auth/**
 
 build-user-service:
   <<: *default-build-image
   stage: build-user-service
   variables:
-    <<: *default-build-image
     IMAGE_NAME: ms-user-service
     IMAGE_TAG: v1.0.0
     DOCKERFILE_PATH: ./backend/user
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-      changes:
-        - backend/user/**
+      # changes:
+      #   - backend/user/**
 
 sync-argocd-app:
   stage: deploy-kubernetes
