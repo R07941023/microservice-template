@@ -1,0 +1,78 @@
+stages:
+  - build-nextjs-service
+  - build-auth-service
+  - build-user-service
+  - deploy-kubernetes
+
+.default-build-image: &default-build-image
+  image: docker:24.0.7
+  retry:
+    max: 2
+    when:
+      - always
+  tags: [docker]
+  services:
+    - name: docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - docker info
+  script:
+    - echo "Build $IMAGE_NAME Docker image"
+    - docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG $DOCKERFILE_PATH
+    - echo "Login to Docker Hub"
+    - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+    - echo "Push to Docker Hub"
+    - docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+
+build-nextjs-service:
+  <<: *default-build-image
+  stage: build-nextjs-service
+  variables:
+    IMAGE_NAME: ms-nextjs-service
+    IMAGE_TAG: v1.0.0
+    DOCKERFILE_PATH: ./frontend
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - frontend/**
+
+build-auth-service:
+  <<: *default-build-image
+  stage: build-auth-service
+  variables:
+    IMAGE_NAME: ms-auth-service
+    IMAGE_TAG: v1.0.0
+    DOCKERFILE_PATH: ./backend/auth
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - backend/auth/**
+
+build-user-service:
+  <<: *default-build-image
+  stage: build-user-service
+  variables:
+    <<: *default-build-image
+    IMAGE_NAME: ms-user-service
+    IMAGE_TAG: v1.0.0
+    DOCKERFILE_PATH: ./backend/user
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - backend/user/**
+
+sync-argocd-app:
+  stage: deploy-kubernetes
+  image: curlimages/curl:8.6.0
+  script:
+    - echo "Trigger Argo CD sync for microservice-template"
+    - |
+      curl -X POST "$ARGOCD_SERVER/api/v1/applications/microservice-template/sync" \
+        -H "Authorization: Bearer $ARGOCD_API_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{"force": true}'
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'

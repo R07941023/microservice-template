@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-nextjs-template
+  labels:
+    app: ms-nextjs-template
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ms-nextjs-template
+  template:
+    metadata:
+      labels:
+        app: ms-nextjs-template
+    spec:
+      containers:
+        - name: ms-nextjs-template
+          image: yenyinglu/ms-nextjs-template:v1.0.0
+          ports:
+            - containerPort: 3000
