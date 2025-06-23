@@ -13,7 +13,7 @@ spec:
         - microservice-template.mydormroom.dpdns.org
       secretName: mydormroom-tls
   rules:
-    - host: microservice-nextjs-template.mydormroom.com
+    - host: microservice-template.mydormroom.com
       http:
         paths:
           - path: /
