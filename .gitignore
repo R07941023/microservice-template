@@ -1,1 +1,5 @@
 frontend/node_modules
+frontend/.next
+frontend/package-lock.json
+backend/auth/__pycache__
+backend/user/__pycache__

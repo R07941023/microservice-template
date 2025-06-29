@@ -1,0 +1,46 @@
+services:
+  ms-nextjs-template:
+    image: node:20
+    container_name: ms-nextjs-template
+    hostname: "ms-nextjs-template"
+    volumes:
+      - E:/project/microservice_template/frontend:/app
+    working_dir: /app
+    environment:
+      - WATCHPACK_POLLING=true
+    # First, run npm install to ensure dependencies are present, then start the dev server.
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "30102:3000"
+    networks:
+      - network-ms-template
+
+  ms-auth:
+    image: python:3.11-slim
+    container_name: ms-auth
+    hostname: "ms-auth"
+    volumes:
+      - E:\\project\\microservice_template\\backend\\auth:/app
+    working_dir: /app
+    # First, install requirements, then start the uvicorn server.
+    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8080 --reload"
+      - "30811:8080"
+    networks:
+      - network-ms-template
+
+  ms-user:
+    image: python:3.11-slim
+    container_name: ms-user
+    hostname: "ms-user"
+    volumes:
+      - E:\\project\\microservice_template\\backend\\user:/app
+    working_dir: /app
+    # First, install requirements, then start the uvicorn server.
+    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8080 --reload"
+    ports:
+      - "30812:8080"
+    networks:
+      - network-ms-template
+
+networks:
+  network-ms-template:
