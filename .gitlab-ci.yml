@@ -1,8 +1,6 @@
 stages:
-  - build-nextjs-service
-  - build-auth-service
-  - build-user-service
-  - deploy-kubernetes
+  - build
+  - release
 
 .default-build-image: &default-build-image
   image: docker:24.0.7
@@ -26,58 +24,88 @@ stages:
 
 build-nextjs-service:
   <<: *default-build-image
-  stage: build-nextjs-service
+  stage: build
   variables:
     IMAGE_NAME: ms-nextjs-service
-    IMAGE_TAG: v1.0.0
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
     DOCKERFILE_PATH: ./frontend
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-# changes:
-#   - frontend/**
 
 build-auth-service:
   <<: *default-build-image
-  stage: build-auth-service
+  stage: build
   variables:
     IMAGE_NAME: ms-auth-service
-    IMAGE_TAG: v1.0.0
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
     DOCKERFILE_PATH: ./backend/auth
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-      # changes:
-      #   - backend/auth/**
 
 build-user-service:
   <<: *default-build-image
-  stage: build-user-service
+  stage: build
   variables:
     IMAGE_NAME: ms-user-service
-    IMAGE_TAG: v1.0.0
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
     DOCKERFILE_PATH: ./backend/user
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-      # changes:
-      #   - backend/user/**
 
-sync-argocd-app:
-  stage: deploy-kubernetes
-  image: curlimages/curl:8.6.0
+create-release-mr:
+  stage: release
+  image: alpine:latest
+  variables:
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
   script:
-    - echo "Trigger Argo CD sync for microservice-template"
     - |
-      curl -X POST "$ARGOCD_SERVER/api/v1/applications/microservice-template/sync" \
-        -H "Authorization: Bearer $ARGOCD_API_TOKEN" \
-        -H "Content-Type: application/json" \
-        -d '{"force": true}'
+      set -e
+      apk update && apk add git curl
+      
+      echo "Updating image tag in deployment files to $IMAGE_TAG"
+      find ./deployment -type f -name "deployment.yaml" -exec sed -i "s|image: \(.*\):.*|image: \1:$IMAGE_TAG|g" {} +
+      
+      echo "Checking for changes..."
+      if [ -z "$(git status --porcelain ./deployment)" ]; then
+        echo "No changes detected in deployment files. Skipping MR creation."
+        exit 0
+      fi
+      
+      echo "Configuring git..."
+      git config --global user.email "${GITLAB_USER_EMAIL:-'gitlab-ci@example.com'}"
+      git config --global user.name "${GITLAB_USER_NAME:-'GitLab CI'}"
+      
+      BRANCH_NAME="release/update-tags-${IMAGE_TAG}"
+      echo "Creating and switching to new branch: ${BRANCH_NAME}"
+      git checkout -b "${BRANCH_NAME}"
+      git add ./deployment/
+      git commit -m "Gitlab CI: Update image tags to $IMAGE_TAG"
+      
+      echo "Pushing changes to remote..."
+      git push "http://gitlab-ci-token:${GITLAB_API_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" "HEAD:${BRANCH_NAME}"
+      
+      echo "Creating Merge Request..."
+      curl --request POST \
+           --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
+           --header "Content-Type: application/json" \
+           --data '{
+             "source_branch": "'"${BRANCH_NAME}"'",
+             "target_branch": "main",
+             "title": "Gitlab CI: Update image tags for '"$IMAGE_TAG"'",
+             "description": "This MR was automatically created by the CI pipeline. It updates deployment image tags to '"${CI_COMMIT_SHA}"'.",
+             "remove_source_branch": true
+           }' \
+           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests"
+      
+      echo "Merge Request created successfully."
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "dev"'
