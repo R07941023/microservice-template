@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: ms-user
-          image: yenyinglu/ms-user-service:v1.0.0
+          image: yenyinglu/ms-user-service:af10428d
           ports:
             - containerPort: 8000
