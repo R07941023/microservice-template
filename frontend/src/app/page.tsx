@@ -39,6 +39,14 @@ export default function Home() {
         handleHistoryClick={handleHistoryClick}
         handleDeleteHistory={handleDeleteHistory}
       />
+      <div className="flex justify-end my-4">
+        <button
+          onClick={() => router.push('/add_drop')}
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Add New Item
+        </button>
+      </div>
       <ResultsComponent
         loading={loading}
         error={error}

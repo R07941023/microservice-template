@@ -36,6 +36,14 @@ class DropUpdate(BaseModel):
     questid: int
     chance: int
 
+class DropCreate(BaseModel):
+    dropperid: int
+    itemid: int
+    minimum_quantity: int
+    maximum_quantity: int
+    questid: int
+    chance: int
+
 # --- API Endpoints ---
 @app.get("/search_drops")
 async def search_drops(query: Optional[str] = None):
@@ -131,6 +139,45 @@ async def update_drop(id: int, drop: DropUpdate):
 
     except mysql.connector.Error as err:
         logger.error(f"Database error on update: {err}", exc_info=True)
+        if cnx: cnx.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if cnx and cnx.is_connected(): cnx.close()
+
+        if cnx and cnx.is_connected(): cnx.close()
+
+@app.post("/add_drop")
+async def add_drop(drop: DropCreate):
+    cnx = None
+    cursor = None
+    try:
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
+        
+        sql_insert_query = """
+            INSERT INTO drop_data 
+            (dropperid, itemid, minimum_quantity, maximum_quantity, questid, chance) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        values = (
+            drop.dropperid,
+            drop.itemid,
+            drop.minimum_quantity,
+            drop.maximum_quantity,
+            drop.questid,
+            drop.chance,
+        )
+        
+        cursor.execute(sql_insert_query, values)
+        cnx.commit()
+        
+        new_id = cursor.lastrowid
+        logger.info(f"Successfully added new drop record with id: {new_id}")
+        return {"message": "Drop data added successfully", "id": new_id}
+
+    except mysql.connector.Error as err:
+        logger.error(f"Database error on add: {err}", exc_info=True)
         if cnx: cnx.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {err}")
     finally:
