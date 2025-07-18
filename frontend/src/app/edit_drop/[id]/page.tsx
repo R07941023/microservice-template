@@ -24,8 +24,8 @@ export default function EditDropPage() {
           }
           const data: DropData = await response.json();
           setItem(data);
-        } catch (err: any) {
-          setError(err.message);
+        } catch (err: unknown) {
+          setError(err instanceof Error ? err.message : 'An unknown error occurred');
         } finally {
           setLoading(false);
         }
@@ -63,9 +63,10 @@ export default function EditDropPage() {
 
       alert('Item deleted successfully!');
       router.push('/'); // Redirect to home page after successful deletion
-    } catch (err: any) {
-      setError(err.message);
-      alert(`Error deleting item: ${err.message}`);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+      alert(`Error deleting item: ${errorMessage}`);
     }
   };
 
