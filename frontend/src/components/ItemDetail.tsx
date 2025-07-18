@@ -1,3 +1,4 @@
+import Image from 'next/image'
 interface DropData {
   id: string;
   dropperid: number;
@@ -22,13 +23,11 @@ export default function ItemDetail({ item, onBack }: ItemDetailProps) {
       >
         &larr; Back to Search
       </button>
+      <p className="text-gray-700">ID: {item.id}</p>
+
       <div className="flex items-center mb-4">
         {/* Placeholder for image - you might want to fetch MapleStory item images based on itemid */}
-        <img src="/next.svg" alt={`Item ID: ${item.itemid}`} className="w-24 h-24 mr-4" />
-        <div>
-          <h2 className="text-3xl font-bold mb-1">Item ID: {item.itemid}</h2>
-          <p className="text-gray-600 text-lg">Dropper ID: {item.dropperid}</p>
-        </div>
+        <Image src="/next.svg" alt={`Item ID: ${item.itemid}`} className="w-24 h-24 mr-4" />
       </div>
       <p className="text-gray-700 mb-2">Dropper ID: {item.dropperid}</p>
       <p className="text-gray-700 mb-2">Item ID: {item.itemid}</p>
@@ -36,7 +35,6 @@ export default function ItemDetail({ item, onBack }: ItemDetailProps) {
       <p className="text-gray-700 mb-2">Minimum Quantity: {item.minimum_quantity}</p>
       <p className="text-gray-700 mb-2">Maximum Quantity: {item.maximum_quantity}</p>
       <p className="text-gray-700 mb-2">Questid: {item.questid}</p>
-      <p className="text-gray-700">ID: {item.id}</p>
     </div>
   );
 }
