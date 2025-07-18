@@ -22,9 +22,7 @@ services:
     volumes:
       - E:\\project\\microservice_template\\backend\\auth:/app
     working_dir: /app
-    # First, install requirements, then start the uvicorn server.
-    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8080 --reload"
-      - "30811:8080"
+    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - network-ms-template
 
@@ -35,10 +33,23 @@ services:
     volumes:
       - E:\\project\\microservice_template\\backend\\user:/app
     working_dir: /app
-    # First, install requirements, then start the uvicorn server.
-    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8080 --reload"
-    ports:
-      - "30812:8080"
+    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    networks:
+      - network-ms-template
+
+  ms-maple-drop-repo:
+    image: python:3.11-slim
+    container_name: ms-maple-drop-repo
+    hostname: "ms-maple-drop-repo"
+    volumes:
+      - E:\project\microservice_template\backend\ms-maple-drop-repo:/app
+    working_dir: /app
+    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      MYSQL_HOST: host.docker.internal:10370
+      MYSQL_USER: root
+      MYSQL_PASSWORD:  ${ITEM_DATA_DB_PASSWORD}
+      MYSQL_DATABASE: TsmcMapleStoryV113
     networks:
       - network-ms-template
 

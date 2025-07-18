@@ -9,5 +9,5 @@ resources:
   - backend/auth/deployment.yaml
   - backend/auth/service.yaml
 
-  - backend/user/deployment.yaml
-  - backend/user/service.yaml
+  - backend/ms-maple-drop-repo/deployment.yaml
+  - backend/ms-maple-drop-repo/service.yaml
