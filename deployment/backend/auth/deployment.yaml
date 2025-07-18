@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: ms-auth
-          image: yenyinglu/ms-auth-service:af10428d
+          image: yenyinglu/ms-auth-service:f169f435
           ports:
             - containerPort: 8000

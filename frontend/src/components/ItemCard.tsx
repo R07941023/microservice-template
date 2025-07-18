@@ -1,0 +1,30 @@
+interface DropData {
+  id: string;
+  dropperid: number;
+  itemid: number;
+  minimum_quantity: number;
+  maximum_quantity: number;
+  questid: number;
+  chance: number;
+}
+
+interface ItemCardProps {
+  item: DropData;
+  onClick: (item: DropData) => void;
+}
+
+export default function ItemCard({ item, onClick }: ItemCardProps) {
+  return (
+    <div
+      className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-lg transition-shadow bg-white text-black"
+      onClick={() => onClick(item)}
+    >
+      {/* Placeholder for image - you might want to fetch MapleStory item images based on itemid */}
+      <img src="/next.svg" alt={`Item ID: ${item.itemid}`} className="w-16 h-16 mx-auto mb-2" />
+      <h3 className="text-lg font-semibold text-center">Dropper ID: {item.dropperid}</h3>
+      <p className="text-sm text-gray-600 text-center">Item ID: {item.itemid}</p>
+      <p className="text-sm text-gray-600 text-center">Chance: {item.chance}</p>
+      <p className="text-sm text-gray-600 text-center">Quantity: {item.minimum_quantity} - {item.maximum_quantity}</p>
+    </div>
+  );
+}

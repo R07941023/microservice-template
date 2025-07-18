@@ -3,3 +3,5 @@ frontend/.next
 frontend/package-lock.json
 backend/auth/__pycache__
 backend/user/__pycache__
+backend/item_data/__pycache__
+.env
