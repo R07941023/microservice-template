@@ -1,22 +1,13 @@
 import React, { useState, useEffect } from 'react';
-
-interface DropData {
-  id: string;
-  dropperid: number;
-  itemid: number;
-  minimum_quantity: number;
-  maximum_quantity: number;
-  questid: number;
-  chance: number;
-}
-
 import { useRouter } from 'next/navigation';
+import { DropData } from '@/hooks/useSearchData';
 
 interface ItemDetailProps {
   item: DropData;
+  onDelete: () => void;
 }
 
-const ItemDetail: React.FC<ItemDetailProps> = ({ item }) => {
+const ItemDetail: React.FC<ItemDetailProps> = ({ item, onDelete }) => {
   const router = useRouter();
   const [editableItem, setEditableItem] = useState<DropData>(item);
   const [isSaving, setIsSaving] = useState(false);
@@ -95,13 +86,19 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item }) => {
         </div>
       </div>
 
-      <div className="mt-6 flex items-center">
+      <div className="mt-6 flex items-center justify-between">
         <button 
           onClick={handleSave}
           disabled={isSaving}
           className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
         >
           {isSaving ? 'Saving...' : 'Save Changes'}
+        </button>
+        <button
+          onClick={onDelete}
+          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Delete Item
         </button>
         {message && <p className={`ml-4 text-sm ${message.startsWith('Error') ? 'text-red-500' : 'text-green-500'}`}>{message}</p>}
       </div>

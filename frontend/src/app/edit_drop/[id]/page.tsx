@@ -3,16 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ItemDetail from '@/components/ItemDetail';
-
-interface DropData {
-  id: string;
-  dropperid: number;
-  itemid: number;
-  minimum_quantity: number;
-  maximum_quantity: number;
-  questid: number;
-  chance: number;
-}
+import { DropData } from '@/hooks/useSearchData';
 
 export default function EditDropPage() {
   const params = useParams();
@@ -54,9 +45,32 @@ export default function EditDropPage() {
     return <div className="p-4 text-center">Item not found.</div>;
   }
 
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this item?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/delete_drop/${item.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to delete item');
+      }
+
+      alert('Item deleted successfully!');
+      router.push('/'); // Redirect to home page after successful deletion
+    } catch (err: any) {
+      setError(err.message);
+      alert(`Error deleting item: ${err.message}`);
+    }
+  };
+
   return (
     <div className="p-4">
-      <ItemDetail item={item} />
+      <ItemDetail item={item} onDelete={handleDelete} />
     </div>
   );
 }

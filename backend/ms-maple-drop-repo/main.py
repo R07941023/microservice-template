@@ -136,3 +136,30 @@ async def update_drop(id: int, drop: DropUpdate):
     finally:
         if cursor: cursor.close()
         if cnx and cnx.is_connected(): cnx.close()
+
+@app.delete("/delete_drop/{id}")
+async def delete_drop(id: int):
+    cnx = None
+    cursor = None
+    try:
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
+        
+        sql_delete_query = "DELETE FROM drop_data WHERE id = %s"
+        
+        cursor.execute(sql_delete_query, (id,))
+        cnx.commit()
+        
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Drop record not found")
+
+        logger.info(f"Successfully deleted drop record with id: {id}")
+        return {"message": "Drop data deleted successfully", "id": id}
+
+    except mysql.connector.Error as err:
+        logger.error(f"Database error on delete: {err}", exc_info=True)
+        if cnx: cnx.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if cnx and cnx.is_connected(): cnx.close()
