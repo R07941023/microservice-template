@@ -10,12 +10,14 @@ interface DropData {
   chance: number;
 }
 
+import { useRouter } from 'next/navigation';
+
 interface ItemDetailProps {
   item: DropData;
-  onBack: () => void;
 }
 
-const ItemDetail: React.FC<ItemDetailProps> = ({ item, onBack }) => {
+const ItemDetail: React.FC<ItemDetailProps> = ({ item }) => {
+  const router = useRouter();
   const [editableItem, setEditableItem] = useState<DropData>(item);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -47,7 +49,11 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onBack }) => {
       }
 
       setMessage("Successfully updated!");
-      setTimeout(() => setMessage(null), 3000); // Hide message after 3 seconds
+      setTimeout(() => {
+        setMessage(null);
+        router.push('/'); // Navigate back to the home page
+        router.refresh(); // Force a refresh to re-fetch data and re-run effects
+      }, 1500); // Hide message and navigate after 1.5 seconds
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -59,7 +65,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onBack }) => {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md max-w-lg mx-auto">
-      <button onClick={onBack} className="mb-4 text-blue-500 hover:underline">{'< Back to results'}</button>
+      
       <h2 className="text-2xl font-bold mb-4 text-gray-800">Editing Drop Record ID: {item.id}</h2>
       
       <div className="space-y-4">

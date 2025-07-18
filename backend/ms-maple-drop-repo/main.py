@@ -71,6 +71,35 @@ async def search_drops(query: Optional[str] = None):
         if cursor: cursor.close()
         if cnx and cnx.is_connected(): cnx.close()
 
+@app.get("/get_drop/{id}")
+async def get_drop(id: int):
+    cnx = None
+    cursor = None
+    try:
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor(dictionary=True)
+        
+        sql_query = "SELECT * FROM drop_data WHERE id = %s"
+        cursor.execute(sql_query, (id,))
+        
+        result = cursor.fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Drop record not found")
+        
+        if 'id' in result:
+            result['id'] = str(result['id'])
+        
+        logger.info(f"Found drop record with id: {id}")
+        return result
+
+    except mysql.connector.Error as err:
+        logger.error(f"Database error: {err}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Database error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if cnx and cnx.is_connected(): cnx.close()
+
 @app.put("/update_drop/{id}")
 async def update_drop(id: int, drop: DropUpdate):
     cnx = None

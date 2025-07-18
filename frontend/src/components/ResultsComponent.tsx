@@ -2,7 +2,6 @@
 
 import React from 'react';
 import ItemCard from './ItemCard';
-import ItemDetail from './ItemDetail';
 
 interface DropData {
   id: string;
@@ -18,20 +17,16 @@ interface ResultsComponentProps {
   loading: boolean;
   error: string | null;
   searchResults: DropData[];
-  selectedItem: DropData | null;
   searchTerm: string;
   handleItemClick: (item: DropData) => void;
-  handleBack: () => void;
 }
 
 const ResultsComponent: React.FC<ResultsComponentProps> = ({
   loading,
   error,
   searchResults,
-  selectedItem,
   searchTerm,
   handleItemClick,
-  handleBack,
 }) => {
   if (error) {
     return <p className="text-red-500 text-center mb-4">Error: {error}</p>;
@@ -41,9 +36,7 @@ const ResultsComponent: React.FC<ResultsComponentProps> = ({
     return <p className="text-center text-gray-500">Loading...</p>;
   }
 
-  if (selectedItem) {
-    return <ItemDetail item={selectedItem} onBack={handleBack} />;
-  }
+  
 
   if (searchResults.length > 0) {
     return (

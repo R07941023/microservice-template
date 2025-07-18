@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import SearchComponent from '@/components/SearchComponent';
 import ResultsComponent from '@/components/ResultsComponent';
 
@@ -83,12 +84,10 @@ export default function Home() {
     setSearchHistory(searchHistory.filter(term => term !== termToDelete));
   };
 
-  const handleItemClick = (item: DropData) => {
-    setSelectedItem(item);
-  };
+  const router = useRouter();
 
-  const handleBack = () => {
-    setSelectedItem(null);
+  const handleItemClick = (item: DropData) => {
+    router.push(`/edit_drop/${item.id}`);
   };
 
   return (
@@ -106,10 +105,8 @@ export default function Home() {
         loading={loading}
         error={error}
         searchResults={searchResults}
-        selectedItem={selectedItem}
         searchTerm={searchTerm}
         handleItemClick={handleItemClick}
-        handleBack={handleBack}
       />
     </div>
   );
