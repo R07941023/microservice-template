@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DropData } from '@/hooks/useSearchData';
 import DropForm from '@/components/DropForm';
+import GoBackButton from '@/components/GoBackButton';
 
 export default function AddDropPage() {
   const router = useRouter();
@@ -65,16 +66,19 @@ export default function AddDropPage() {
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow-md max-w-lg mx-auto mt-8">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Add New Drop Record</h2>
-      <DropForm
-        formData={formData}
-        onFormChange={handleChange}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        submitButtonText="Add Item"
-        message={message}
-      />
+    <div className="p-4">
+      <GoBackButton />
+      <div className="bg-white rounded-lg shadow-md max-w-lg mx-auto mt-8">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">Add New Drop Record</h2>
+        <DropForm
+          formData={formData}
+          onFormChange={handleChange}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          submitButtonText="Add Item"
+          message={message}
+        />
+      </div>
     </div>
   );
 }

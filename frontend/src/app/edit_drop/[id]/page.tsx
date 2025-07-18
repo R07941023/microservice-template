@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ItemDetail from '@/components/ItemDetail';
 import { DropData } from '@/hooks/useSearchData';
+import GoBackButton from '@/components/GoBackButton';
 
 export default function EditDropPage() {
   const params = useParams();
@@ -70,6 +71,7 @@ export default function EditDropPage() {
 
   return (
     <div className="p-4">
+      <GoBackButton />
       <ItemDetail item={item} onDelete={handleDelete} />
     </div>
   );
