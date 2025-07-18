@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from 'react';
-import ItemCard from '../components/ItemCard';
-import ItemDetail from '../components/ItemDetail';
+import { useState, useEffect } from 'react';
+import SearchComponent from '@/components/SearchComponent';
+import ResultsComponent from '@/components/ResultsComponent';
 
 interface DropData {
   id: string;
@@ -20,18 +20,46 @@ export default function Home() {
   const [selectedItem, setSelectedItem] = useState<DropData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
-  const handleSearch = async () => {
-    if (!searchTerm) return;
+  // Load search history from localStorage on initial render
+  useEffect(() => {
+    try {
+      const storedHistory = localStorage.getItem('searchHistory');
+      if (storedHistory) {
+        setSearchHistory(JSON.parse(storedHistory));
+      }
+    } catch (error) {
+      console.error("Failed to parse search history from localStorage", error);
+      setSearchHistory([]);
+    }
+  }, []);
+
+  // Save search history to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+    } catch (error) {
+      console.error("Failed to save search history to localStorage", error);
+    }
+  }, [searchHistory]);
+
+  const handleSearch = async (query?: string) => {
+    const termToSearch = query || searchTerm;
+    if (!termToSearch) return;
 
     setLoading(true);
     setError(null);
     setSearchResults([]);
     setSelectedItem(null);
 
+    // Add to history if it's a new term
+    if (!searchHistory.includes(termToSearch)) {
+      setSearchHistory([termToSearch, ...searchHistory].slice(0, 10)); // Keep last 10 searches
+    }
+
     try {
-      const response = await fetch(`/api/search_drops?query=${searchTerm}`);
-      console.log(response)
+      const response = await fetch(`/api/search_drops?query=${termToSearch}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to fetch data');
@@ -45,53 +73,44 @@ export default function Home() {
     }
   };
 
+  const handleHistoryClick = (term: string) => {
+    setSearchTerm(term);
+    handleSearch(term);
+  };
+
+  const handleDeleteHistory = (e: React.MouseEvent, termToDelete: string) => {
+    e.stopPropagation(); // Prevent the history click from firing
+    setSearchHistory(searchHistory.filter(term => term !== termToDelete));
+  };
+
   const handleItemClick = (item: DropData) => {
     setSelectedItem(item);
   };
 
+  const handleBack = () => {
+    setSelectedItem(null);
+  };
+
   return (
     <div className="p-4">
-      <div className="flex mb-4">
-        <input
-          type="text"
-          placeholder="Search by Dropper ID or Item ID..."
-          className="flex-grow p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter') {
-              handleSearch();
-            }
-          }}
-        />
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          onClick={handleSearch}
-          disabled={loading}
-        >
-          {loading ? 'Searching...' : 'Search'}
-        </button>
-      </div>
-
-      {error && <p className="text-red-500 text-center mb-4">Error: {error}</p>}
-      {loading && <p className="text-center text-gray-500">Loading...</p>}
-
-      {selectedItem ? (
-        <ItemDetail item={selectedItem} onBack={() => setSelectedItem(null)} />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {searchResults.map((item) => (
-            <ItemCard key={item.id} item={item} onClick={handleItemClick} />
-          ))}
-        </div>
-      )}
-
-      {!loading && !error && searchResults.length === 0 && searchTerm && (
-        <p className="text-center text-gray-500">No results found for &quot;{searchTerm}&quot;.</p>
-      )}
-      {!loading && !error && searchResults.length === 0 && !searchTerm && (
-        <p className="text-center text-gray-500">Enter a Dropper ID or Item ID to search for MapleStory drops.</p>
-      )}
+      <SearchComponent
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        handleSearch={() => handleSearch()}
+        loading={loading}
+        searchHistory={searchHistory}
+        handleHistoryClick={handleHistoryClick}
+        handleDeleteHistory={handleDeleteHistory}
+      />
+      <ResultsComponent
+        loading={loading}
+        error={error}
+        searchResults={searchResults}
+        selectedItem={selectedItem}
+        searchTerm={searchTerm}
+        handleItemClick={handleItemClick}
+        handleBack={handleBack}
+      />
     </div>
   );
 }
