@@ -2,16 +2,7 @@
 
 import React from 'react';
 import ItemCard from './ItemCard';
-
-interface DropData {
-  id: string;
-  dropperid: number;
-  itemid: number;
-  minimum_quantity: number;
-  maximum_quantity: number;
-  questid: number;
-  chance: number;
-}
+import { DropData } from '@/hooks/useSearchData';
 
 interface ResultsComponentProps {
   loading: boolean;
