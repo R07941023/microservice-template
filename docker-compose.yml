@@ -16,24 +16,24 @@ services:
       - network-ms-template
 
   ms-auth:
-    image: python:3.11-slim
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
     container_name: ms-auth
     hostname: "ms-auth"
     volumes:
       - E:\\project\\microservice_template\\backend\\auth:/app
     working_dir: /app
-    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - network-ms-template
 
   ms-maple-drop-repo:
-    image: python:3.11-slim
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
     container_name: ms-maple-drop-repo
     hostname: "ms-maple-drop-repo"
     volumes:
       - E:\project\microservice_template\backend\ms-maple-drop-repo:/app
     working_dir: /app
-    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       MYSQL_HOST: host.docker.internal:10370
       MYSQL_USER: root

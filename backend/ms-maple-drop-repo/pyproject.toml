@@ -1,0 +1,12 @@
+[project]
+name = "ms-maple-drop-repo"
+version = "0.1.0"
+description = "get drop item form monster"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "mysql-connector-python",
+]
+requires-python = ">=3.11"
+
+[tool.uv]
