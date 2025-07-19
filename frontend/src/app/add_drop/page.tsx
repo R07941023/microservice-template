@@ -58,8 +58,8 @@ export default function AddDropPage() {
         router.refresh(); // Force a refresh to re-fetch data
       }, 1500);
 
-    } catch (err: any) {
-      setMessage(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? `Error: ${err.message}`: "Unknown error occurred");
     } finally {
       setIsSubmitting(false);
     }
