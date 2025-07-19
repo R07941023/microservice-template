@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { DropData } from '@/hooks/useSearchData';
 import DropForm from '@/components/DropForm';
 import GoBackButton from '@/components/GoBackButton';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AddDropPage() {
   const router = useRouter();
+  const { token} = useAuth(); // Get the token from AuthContext
   const [formData, setFormData] = useState<Omit<DropData, 'id'> & { id?: string }>({ // id is optional for new items
     dropperid: 0,
     itemid: 0,
@@ -29,11 +31,18 @@ export default function AddDropPage() {
     setIsSubmitting(true);
     setMessage(null);
 
+    if (!token) {
+      setMessage("Error: You must be logged in to add an item.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/add_drop', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Add Authorization header
         },
         body: JSON.stringify(formData),
       });
@@ -54,8 +63,7 @@ export default function AddDropPage() {
       }); // Clear form
       setTimeout(() => {
         setMessage(null);
-        router.push('/'); // Navigate back to home page
-        router.refresh(); // Force a refresh to re-fetch data
+        router.push(`/?query=${formData.dropperid}`);
       }, 1500);
 
     } catch (err: unknown) {

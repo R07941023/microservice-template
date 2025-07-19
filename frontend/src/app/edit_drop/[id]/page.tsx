@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ItemDetail from '@/components/ItemDetail';
 import { DropData } from '@/hooks/useSearchData';
 import GoBackButton from '@/components/GoBackButton';
+import { useAuth } from '@/context/AuthContext';
 
 export default function EditDropPage() {
   const params = useParams();
@@ -13,6 +14,7 @@ export default function EditDropPage() {
   const [item, setItem] = useState<DropData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
 
   useEffect(() => {
     if (id) {
@@ -54,6 +56,9 @@ export default function EditDropPage() {
     try {
       const response = await fetch(`/api/delete_drop/${item.id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {

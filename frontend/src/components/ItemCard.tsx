@@ -26,6 +26,7 @@ export default function ItemCard({ item, onClick }: ItemCardProps) {
         alt={`Item ID: ${item.itemid}`}
         width={64}
         height={64}
+        style={{ height: 64 }} 
         className="mx-auto mb-2"
       />
       <h3 className="text-lg font-semibold text-center">Dropper ID: {item.dropperid}</h3>

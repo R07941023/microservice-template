@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, List
 import mysql.connector
@@ -46,7 +46,13 @@ class DropCreate(BaseModel):
 
 # --- API Endpoints ---
 @app.get("/search_drops")
-async def search_drops(query: Optional[str] = None):
+async def search_drops(request: Request, query: Optional[str] = None):
+    authorization_header = request.headers.get("Authorization")
+    if authorization_header:
+        logger.info(f"Received Authorization header for search_drops: {authorization_header}")
+    else:
+        logger.info("No Authorization header received for search_drops.")
+
     if not query:
         logger.warning("Query parameter 'query' is required.")
         raise HTTPException(status_code=400, detail="Query parameter 'query' is required.")
@@ -109,7 +115,13 @@ async def get_drop(id: int):
         if cnx and cnx.is_connected(): cnx.close()
 
 @app.put("/update_drop/{id}")
-async def update_drop(id: int, drop: DropUpdate):
+async def update_drop(id: int, drop: DropUpdate, request: Request):
+    authorization_header = request.headers.get("Authorization")
+    if authorization_header:
+        logger.info(f"Received Authorization header for update_drop: {authorization_header}")
+    else:
+        logger.info("No Authorization header received for update_drop.")
+
     cnx = None
     cursor = None
     try:
@@ -146,7 +158,13 @@ async def update_drop(id: int, drop: DropUpdate):
         if cnx and cnx.is_connected(): cnx.close()
 
 @app.post("/add_drop")
-async def add_drop(drop: DropCreate):
+async def add_drop(drop: DropCreate, request: Request):
+    authorization_header = request.headers.get("Authorization")
+    if authorization_header:
+        logger.info(f"Received Authorization header for add_drop: {authorization_header}")
+    else:
+        logger.info("No Authorization header received for add_drop.")
+
     cnx = None
     cursor = None
     try:
@@ -183,7 +201,13 @@ async def add_drop(drop: DropCreate):
         if cnx and cnx.is_connected(): cnx.close()
 
 @app.delete("/delete_drop/{id}")
-async def delete_drop(id: int):
+async def delete_drop(id: int, request: Request):
+    authorization_header = request.headers.get("Authorization")
+    if authorization_header:
+        logger.info(f"Received Authorization header for delete_drop: {authorization_header}")
+    else:
+        logger.info("No Authorization header received for delete_drop.")
+
     cnx = None
     cursor = None
     try:

@@ -16,6 +16,7 @@ interface SearchComponentProps {
   searchHistory: string[];
   handleHistoryClick: (term: string) => void;
   handleDeleteHistory: (e: React.MouseEvent, term: string) => void;
+  disabled?: boolean; // Add disabled prop
 }
 
 const SearchComponent: React.FC<SearchComponentProps> = ({
@@ -26,6 +27,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
   searchHistory,
   handleHistoryClick,
   handleDeleteHistory,
+  disabled = false, // Default to false
 }) => {
   return (
     <>
@@ -33,7 +35,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
         <input
           type="text"
           placeholder="Search by Dropper ID or Item ID..."
-          className="flex-grow p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+          className="flex-grow p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black disabled:bg-gray-100 disabled:cursor-not-allowed"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyPress={(e) => {
@@ -41,11 +43,12 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
               handleSearch();
             }
           }}
+          disabled={disabled} // Apply disabled prop
         />
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
           onClick={handleSearch}
-          disabled={loading}
+          disabled={loading || disabled} // Apply disabled prop
         >
           {loading ? 'Searching...' : 'Search'}
         </button>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DropData } from '@/hooks/useSearchData';
 import DropForm from './DropForm';
+import { useAuth } from '@/context/AuthContext';
 
 interface ItemDetailProps {
   item: DropData;
@@ -10,6 +11,7 @@ interface ItemDetailProps {
 
 const ItemDetail: React.FC<ItemDetailProps> = ({ item, onDelete }) => {
   const router = useRouter();
+  const { token } = useAuth(); // Get the token and triggerLogin from AuthContext
   const [editableItem, setEditableItem] = useState<DropData>(item);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -27,11 +29,19 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onDelete }) => {
     e.preventDefault(); // Prevent default form submission
     setIsSaving(true);
     setMessage(null);
+
+    if (!token) {
+      setMessage("Error: You must be logged in to save changes.");
+      setIsSaving(false);
+      return;
+    }
+
     try {
       const response = await fetch(`/api/update_drop/${item.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Add Authorization header
         },
         body: JSON.stringify(editableItem),
       });
@@ -44,9 +54,8 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onDelete }) => {
       setMessage("Successfully updated!");
       setTimeout(() => {
         setMessage(null);
-        router.push('/'); // Navigate back to the home page
-        router.refresh(); // Force a refresh to re-fetch data and re-run effects
-      }, 1500); // Hide message and navigate after 1.5 seconds
+        router.push(`/?query=${editableItem.dropperid}`);
+      }, 1500);
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -60,7 +69,6 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ item, onDelete }) => {
     <div className="p-4 bg-white rounded-lg shadow-md max-w-lg mx-auto">
       
       <h2 className="text-2xl font-bold mb-4 text-gray-800">Editing Drop Record ID: {item.id}</h2>
-      
       <DropForm
         formData={editableItem}
         onFormChange={handleChange}

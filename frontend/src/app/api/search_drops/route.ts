@@ -1,17 +1,32 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
+  const authorizationHeader = request.headers.get('Authorization'); // Get Authorization header
 
   if (!query) {
-    return NextResponse.json({ detail: 'Query parameter \'query\' is required.' }, { status: 400 });
+    return NextResponse.json({ detail: `Query parameter 'query' is required.` }, { status: 400 });
   }
 
   try {
+    const headers: HeadersInit = {};
+    if (authorizationHeader) {
+      headers['Authorization'] = authorizationHeader; // Add Authorization header if present
+    }
+
     // Forward the request to the internal backend service
-    const backendResponse = await fetch(`http://ms-maple-drop-repo:8000/search_drops?query=${query}`);
-    console.log(backendResponse)
+    // The backend service name is 'ms-maple-drop-repo' as defined in docker-compose.yml
+    // Docker's internal DNS will resolve this hostname to the correct container IP.
+    const backendUrl = `http://ms-maple-drop-repo:8000/search_drops?query=${query}`
+    const backendResponse = await fetch(backendUrl, {
+      headers: headers, // Pass headers to backend fetch
+      cache: 'no-store',
+    });
+
+    console.log(backendResponse);
 
     if (!backendResponse.ok) {
       const errorData = await backendResponse.json();
@@ -25,3 +40,4 @@ export async function GET(request: Request) {
     return NextResponse.json({ detail: 'Internal Server Error' }, { status: 500 });
   }
 }
+

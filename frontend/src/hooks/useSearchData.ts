@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 export interface DropData {
   id: string;
@@ -11,6 +12,8 @@ export interface DropData {
 }
 
 export function useSearchData() {
+  const { token } = useAuth(); // Get the token from AuthContext
+
   const [searchTerm, setSearchTerm] = useState(() => {
     if (typeof window !== 'undefined') {
       const storedTerm = localStorage.getItem('searchTerm');
@@ -75,13 +78,23 @@ export function useSearchData() {
     setSearchResults([]);
     setSelectedItem(null);
 
+    if (!token) {
+      setError("Error: You must be logged in to perform a search.");
+      setLoading(false);
+      return;
+    }
+
     // Add to history if it's a new term
     if (!searchHistory.includes(termToSearch)) {
       setSearchHistory([termToSearch, ...searchHistory].slice(0, 10)); // Keep last 10 searches
     }
 
     try {
-      const response = await fetch(`/api/search_drops?query=${termToSearch}`);
+      const response = await fetch(`/api/search_drops?query=${termToSearch}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to fetch data');
