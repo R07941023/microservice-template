@@ -145,8 +145,6 @@ async def update_drop(id: int, drop: DropUpdate):
         if cursor: cursor.close()
         if cnx and cnx.is_connected(): cnx.close()
 
-        if cnx and cnx.is_connected(): cnx.close()
-
 @app.post("/add_drop")
 async def add_drop(drop: DropCreate):
     cnx = None
