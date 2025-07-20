@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    domains: ['lh3.googleusercontent.com'],
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.watchOptions = {
@@ -9,6 +12,14 @@ const nextConfig: NextConfig = {
       };
     }
     return config;
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://ms-maple-drop-repo:8000/:path*',
+      },
+    ];
   },
   /* config options here */
 };

@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel
 from typing import Optional, List
 import mysql.connector
 from mysql.connector import pooling
@@ -11,15 +12,12 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# Database connection details from environment variables
-DB_HOST_PORT = os.getenv("MYSQL_HOST", "db:3306") # Default to 'db:3306' if not set
+# --- Database Configuration ---
+DB_HOST_PORT = os.getenv("MYSQL_HOST", "db:3306")
 DB_USER = os.getenv("MYSQL_USER", "username")
 DB_PASSWORD = os.getenv("MYSQL_PASSWORD", "password")
 DB_NAME = os.getenv("MYSQL_DATABASE", "database")
-
-# Parse host and port
 db_host, db_port = DB_HOST_PORT.split(":")
-
 DB_CONFIG = {
     "host": db_host,
     "port": int(db_port),
@@ -27,14 +25,34 @@ DB_CONFIG = {
     "password": DB_PASSWORD,
     "database": DB_NAME
 }
+cnxpool = pooling.MySQLConnectionPool(pool_name="mypool", pool_size=5, **DB_CONFIG)
 
-# Create a connection pool
-cnxpool = pooling.MySQLConnectionPool(pool_name="mypool",
-                                      pool_size=5,
-                                      **DB_CONFIG)
+# --- Pydantic Models ---
+class DropUpdate(BaseModel):
+    dropperid: int
+    itemid: int
+    minimum_quantity: int
+    maximum_quantity: int
+    questid: int
+    chance: int
 
+class DropCreate(BaseModel):
+    dropperid: int
+    itemid: int
+    minimum_quantity: int
+    maximum_quantity: int
+    questid: int
+    chance: int
+
+# --- API Endpoints ---
 @app.get("/search_drops")
-async def search_drops(query: Optional[str] = None):
+async def search_drops(request: Request, query: Optional[str] = None):
+    authorization_header = request.headers.get("Authorization")
+    if authorization_header:
+        logger.info(f"Received Authorization header for search_drops: {authorization_header}")
+    else:
+        logger.info("No Authorization header received for search_drops.")
+
     if not query:
         logger.warning("Query parameter 'query' is required.")
         raise HTTPException(status_code=400, detail="Query parameter 'query' is required.")
@@ -42,38 +60,175 @@ async def search_drops(query: Optional[str] = None):
     cnx = None
     cursor = None
     try:
-        # Get a connection from the pool
         cnx = cnxpool.get_connection()
         cursor = cnx.cursor(dictionary=True)
-
-        # Try to convert query to int for id searches
         try:
             query_int = int(query)
             sql_query = "SELECT * FROM drop_data WHERE dropperid = %s OR itemid = %s"
-            logger.info(f"Executing SQL: {sql_query} with params: ({query_int}, {query_int})")
             cursor.execute(sql_query, (query_int, query_int))
         except ValueError:
             logger.warning(f"Query '{query}' is not a valid integer.")
             raise HTTPException(status_code=400, detail="Query must be a valid integer for dropperid or itemid.")
-
+        
         results = cursor.fetchall()
-
-        # Convert 'id' to string for frontend compatibility
         for row in results:
             if 'id' in row:
                 row['id'] = str(row['id'])
-
+        
         logger.info(f"Found {len(results)} results for query: {query}")
         return results
 
     except mysql.connector.Error as err:
         logger.error(f"Database error: {err}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Database error: {err}")
-    except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
     finally:
-        if cursor:
-            cursor.close()
-        if cnx and cnx.is_connected():
-            cnx.close() # Return the connection to the pool
+        if cursor: cursor.close()
+        if cnx and cnx.is_connected(): cnx.close()
+
+@app.get("/get_drop/{id}")
+async def get_drop(id: int):
+    cnx = None
+    cursor = None
+    try:
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor(dictionary=True)
+        
+        sql_query = "SELECT * FROM drop_data WHERE id = %s"
+        cursor.execute(sql_query, (id,))
+        
+        result = cursor.fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Drop record not found")
+        
+        if 'id' in result:
+            result['id'] = str(result['id'])
+        
+        logger.info(f"Found drop record with id: {id}")
+        return result
+
+    except mysql.connector.Error as err:
+        logger.error(f"Database error: {err}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Database error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if cnx and cnx.is_connected(): cnx.close()
+
+@app.put("/update_drop/{id}")
+async def update_drop(id: int, drop: DropUpdate, request: Request):
+    authorization_header = request.headers.get("Authorization")
+    if authorization_header:
+        logger.info(f"Received Authorization header for update_drop: {authorization_header}")
+    else:
+        logger.info("No Authorization header received for update_drop.")
+
+    cnx = None
+    cursor = None
+    try:
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
+        
+        sql_update_query = """
+            UPDATE drop_data 
+            SET dropperid=%s, itemid=%s, minimum_quantity=%s, maximum_quantity=%s, questid=%s, chance=%s 
+            WHERE id=%s
+        """
+        values = (
+            drop.dropperid,
+            drop.itemid,
+            drop.minimum_quantity,
+            drop.maximum_quantity,
+            drop.questid,
+            drop.chance,
+            id
+        )
+        
+        cursor.execute(sql_update_query, values)
+        cnx.commit()
+        
+        logger.info(f"Successfully updated drop record with id: {id}")
+        return {"message": "Drop data updated successfully", "id": id}
+
+    except mysql.connector.Error as err:
+        logger.error(f"Database error on update: {err}", exc_info=True)
+        if cnx: cnx.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if cnx and cnx.is_connected(): cnx.close()
+
+@app.post("/add_drop")
+async def add_drop(drop: DropCreate, request: Request):
+    authorization_header = request.headers.get("Authorization")
+    if authorization_header:
+        logger.info(f"Received Authorization header for add_drop: {authorization_header}")
+    else:
+        logger.info("No Authorization header received for add_drop.")
+
+    cnx = None
+    cursor = None
+    try:
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
+        
+        sql_insert_query = """
+            INSERT INTO drop_data 
+            (dropperid, itemid, minimum_quantity, maximum_quantity, questid, chance) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        values = (
+            drop.dropperid,
+            drop.itemid,
+            drop.minimum_quantity,
+            drop.maximum_quantity,
+            drop.questid,
+            drop.chance,
+        )
+        
+        cursor.execute(sql_insert_query, values)
+        cnx.commit()
+        
+        new_id = cursor.lastrowid
+        logger.info(f"Successfully added new drop record with id: {new_id}")
+        return {"message": "Drop data added successfully", "id": new_id}
+
+    except mysql.connector.Error as err:
+        logger.error(f"Database error on add: {err}", exc_info=True)
+        if cnx: cnx.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if cnx and cnx.is_connected(): cnx.close()
+
+@app.delete("/delete_drop/{id}")
+async def delete_drop(id: int, request: Request):
+    authorization_header = request.headers.get("Authorization")
+    if authorization_header:
+        logger.info(f"Received Authorization header for delete_drop: {authorization_header}")
+    else:
+        logger.info("No Authorization header received for delete_drop.")
+
+    cnx = None
+    cursor = None
+    try:
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
+        
+        sql_delete_query = "DELETE FROM drop_data WHERE id = %s"
+        
+        cursor.execute(sql_delete_query, (id,))
+        cnx.commit()
+        
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Drop record not found")
+
+        logger.info(f"Successfully deleted drop record with id: {id}")
+        return {"message": "Drop data deleted successfully", "id": id}
+
+    except mysql.connector.Error as err:
+        logger.error(f"Database error on delete: {err}", exc_info=True)
+        if cnx: cnx.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {err}")
+    finally:
+        if cursor: cursor.close()
+        if cnx and cnx.is_connected(): cnx.close()

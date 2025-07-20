@@ -1,42 +1,92 @@
-interface DropData {
-  id: string;
-  dropperid: number;
-  itemid: number;
-  minimum_quantity: number;
-  maximum_quantity: number;
-  questid: number;
-  chance: number;
-}
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { DropData } from '@/hooks/useSearchData';
+import DropForm from './DropForm';
+import { useAuth } from '@/context/AuthContext';
 
 interface ItemDetailProps {
   item: DropData;
-  onBack: () => void;
+  onDelete: () => void;
 }
 
-export default function ItemDetail({ item, onBack }: ItemDetailProps) {
+const ItemDetail: React.FC<ItemDetailProps> = ({ item, onDelete }) => {
+  const router = useRouter();
+  const { token } = useAuth(); // Get the token and triggerLogin from AuthContext
+  const [editableItem, setEditableItem] = useState<DropData>(item);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEditableItem(item);
+  }, [item]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditableItem(prev => ({ ...prev, [name]: Number(value) }));
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent default form submission
+    setIsSaving(true);
+    setMessage(null);
+
+    if (!token) {
+      setMessage("Error: You must be logged in to save changes.");
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/update_drop/${item.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Add Authorization header
+        },
+        body: JSON.stringify(editableItem),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to save data');
+      }
+
+      setMessage("Successfully updated!");
+      setTimeout(() => {
+        setMessage(null);
+        router.push(`/?query=${editableItem.dropperid}`);
+      }, 1500);
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setMessage(`Error: ${errorMessage}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg text-black">
-      <button
-        className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md mb-4 hover:bg-gray-300"
-        onClick={onBack}
-      >
-        &larr; Back to Search
-      </button>
-      <div className="flex items-center mb-4">
-        {/* Placeholder for image - you might want to fetch MapleStory item images based on itemid */}
-        <img src="/next.svg" alt={`Item ID: ${item.itemid}`} className="w-24 h-24 mr-4" />
-        <div>
-          <h2 className="text-3xl font-bold mb-1">Item ID: {item.itemid}</h2>
-          <p className="text-gray-600 text-lg">Dropper ID: {item.dropperid}</p>
-        </div>
-      </div>
-      <p className="text-gray-700 mb-2">Dropper ID: {item.dropperid}</p>
-      <p className="text-gray-700 mb-2">Item ID: {item.itemid}</p>
-      <p className="text-gray-700 mb-2">Chance: {item.chance}</p>
-      <p className="text-gray-700 mb-2">Minimum Quantity: {item.minimum_quantity}</p>
-      <p className="text-gray-700 mb-2">Maximum Quantity: {item.maximum_quantity}</p>
-      <p className="text-gray-700 mb-2">Questid: {item.questid}</p>
-      <p className="text-gray-700">ID: {item.id}</p>
+    <div className="p-4 bg-white rounded-lg shadow-md max-w-lg mx-auto">
+      
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">Editing Drop Record ID: {item.id}</h2>
+      <DropForm
+        formData={editableItem}
+        onFormChange={handleChange}
+        onSubmit={handleSave}
+        isSubmitting={isSaving}
+        submitButtonText="Save Changes"
+        message={message}
+        rightSideContent={(
+          <button
+            onClick={onDelete}
+            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Delete Item
+          </button>
+        )}
+      />
     </div>
   );
-}
+};
+
+export default ItemDetail;
