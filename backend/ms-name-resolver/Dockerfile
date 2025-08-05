@@ -1,20 +1,14 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
-
-# Set the working directory in the container
+FROM python:3.11-slim
 WORKDIR /app
-
-# Install poetry
-RUN pip install poetry
-
-# Copy the pyproject.toml and poetry.lock files to the container
-COPY pyproject.toml poetry.lock* ./
-
-# Install project dependencies
-RUN poetry config virtualenvs.create false && poetry install --no-dev --no-root
-
-# Copy the rest of the application's code to the container
+# install uv
+RUN pip install --no-cache-dir uv
+# add package management file
+COPY pyproject.toml uv.lock ./
+# uv install
+RUN uv sync --no-dev --frozen
+# code
 COPY . .
-
-# Command to run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# port
+EXPOSE 8000
+# run
+CMD [".venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
