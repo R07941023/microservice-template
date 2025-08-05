@@ -41,7 +41,10 @@ async def resolve_ids(request: ResolveIdsRequest):
     item_cursor = collection.find({
         "name": {"$in": request.nameList},
     })
-    ids={doc["name"]: doc["id"] for doc in item_cursor}
+    ids = {
+        doc["name"]: {"id": doc["id"], "type": doc["type"]}
+        for doc in item_cursor
+    }
     
     return ResolveIdsResponse(ids=ids)
 

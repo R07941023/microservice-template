@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Literal
 
 class AugmentedDrop(BaseModel):
     id: str
@@ -14,3 +14,7 @@ class AugmentedDrop(BaseModel):
 
 class AugmentedSearchResponse(BaseModel):
     data: List[AugmentedDrop]
+
+class IdInfo(BaseModel):
+    id: int
+    type: Literal["item", "mob"]

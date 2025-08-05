@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Literal
 
 # --- Pydantic Models for resolving names from IDs ---
 class ResolveNamesRequest(BaseModel):
@@ -13,5 +13,9 @@ class ResolveNamesResponse(BaseModel):
 class ResolveIdsRequest(BaseModel):
     nameList: List[str]
 
+class IdWithType(BaseModel):
+    id: int
+    type: Literal["item", "mob"]
+
 class ResolveIdsResponse(BaseModel):
-    ids: Dict[str, int]
+    ids: Dict[str, IdWithType]

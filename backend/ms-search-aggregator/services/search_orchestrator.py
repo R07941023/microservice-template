@@ -21,11 +21,11 @@ def augment_drop_data(drops: List[Dict[str, Any]], dropper_names: Dict[str, str]
 
 async def search_and_augment_drops(client: httpx.AsyncClient, name: str) -> List[AugmentedDrop]:
     """Orchestrates the process of searching for and augmenting drop data."""
-    mob_id = await name_resolver_client.resolve_name_to_id(client, name)
-    if not mob_id:
+    idInfo = await name_resolver_client.resolve_name_to_id(client, name)
+    if not idInfo:
         return []
 
-    drops = await drop_repo_client.fetch_drops_by_mob_id(client, mob_id)
+    drops = await drop_repo_client.fetch_drops_by_mob_id(client, idInfo)
     if not drops:
         return []
 

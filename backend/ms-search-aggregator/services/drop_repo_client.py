@@ -1,6 +1,7 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, TypedDict, Literal
 import httpx
 import logging
+from models import IdInfo
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -8,10 +9,10 @@ logger = logging.getLogger(__name__)
 
 DROP_REPO_URL = "http://ms-maple-drop-repo:8000"
 
-async def fetch_drops_by_mob_id(client: httpx.AsyncClient, mob_id: int) -> List[Dict[str, Any]]:
+async def fetch_drops_by_mob_id(client: httpx.AsyncClient, idInfo: IdInfo) -> List[Dict[str, Any]]:
     """Fetches drop data for a given mob ID from the drop-repo service."""
     try:
-        response = await client.get(f"{DROP_REPO_URL}/api/search_drops", params={"query": mob_id, "query_type": "mob"})
+        response = await client.get(f"{DROP_REPO_URL}/api/search_drops", params={"query": idInfo["id"], "query_type": idInfo["type"]})
         response.raise_for_status()
         return response.json()
     except httpx.HTTPStatusError as e:
