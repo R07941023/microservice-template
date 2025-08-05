@@ -5,6 +5,7 @@ from mysql.connector import pooling, cursor
 import logging
 import os
 from models import DropUpdate, DropCreate
+from typing import Literal
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -59,14 +60,21 @@ def get_db_writer_cursor(request: Request) -> cursor.MySQLCursor:
         if cnx and cnx.is_connected(): cnx.close()
 
 # --- API Endpoints ---
-@app.get("/search_drops")
+@app.get("/api/search_drops")
 async def search_drops(
     request: Request,
     query: int = Query(..., description="Must be an integer"),
+    query_type: Literal["item", "mob"] = Query(..., description="Choose either 'item' or 'mob'"),
     cursor: cursor.MySQLCursorDict = Depends(get_db_cursor)
 ):
-    sql_query = "SELECT * FROM drop_data WHERE dropperid = %s OR itemid = %s"
-    cursor.execute(sql_query, (query, query))
+    
+    field = {
+        "item": "itemid",
+        "mob": "dropperid"
+    }.get(query_type)
+
+    sql_query = f"SELECT * FROM drop_data WHERE {field} = %s"
+    cursor.execute(sql_query, (query,))
     results = cursor.fetchall()
     for row in results:
         if 'id' in row:

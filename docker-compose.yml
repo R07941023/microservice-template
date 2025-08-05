@@ -22,8 +22,6 @@ services:
     volumes:
       - E:\project\microservice_template\backend\ms-maple-drop-repo:/app
     working_dir: /app
-    ports:
-      - "30102:8000"
     command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       MYSQL_HOST: host.docker.internal:10370
@@ -43,6 +41,19 @@ services:
     command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       MONGO_URI: "mongodb://host.docker.internal:30370/?directConnection=true"
+    networks:
+      - network-ms-template
+
+  ms-search-aggregator:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    container_name: ms-search-aggregator
+    hostname: "ms-search-aggregator"
+    ports:
+      - "30102:8000"
+    volumes:
+      - E:\project\microservice_template\backend\ms-search-aggregator:/app
+    working_dir: /app
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - network-ms-template
 

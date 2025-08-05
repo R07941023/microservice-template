@@ -5,4 +5,7 @@ backend/ms-name-resolver/__pycache__
 backend/ms-name-resolver/.venv
 backend/ms-maple-drop-repo/__pycache__
 backend/ms-maple-drop-repo/.venv
+backend/ms-search-aggregator/__pycache__
+backend/ms-search-aggregator/.venv
+backend/ms-search-aggregator/services/__pycache__
 .env

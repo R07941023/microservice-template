@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
   - backend/ms-maple-drop-repo
   - backend/ms-name-resolver
+  - backend/ms-search-aggregator
   - frontend
 
