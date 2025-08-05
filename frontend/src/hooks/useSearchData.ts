@@ -9,6 +9,8 @@ export interface DropData {
   maximum_quantity: number;
   questid: number;
   chance: number;
+  dropper_name: string;
+  item_name: string;
 }
 
 export function useSearchData() {
