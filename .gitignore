@@ -1,8 +1,8 @@
 frontend/node_modules
 frontend/.next
 frontend/package-lock.json
-backend/auth/__pycache__
-backend/auth/.venv
+backend/ms-name-resolver/__pycache__
+backend/ms-name-resolver/.venv
 backend/ms-maple-drop-repo/__pycache__
 backend/ms-maple-drop-repo/.venv
 .env

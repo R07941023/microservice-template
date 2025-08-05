@@ -1,0 +1,11 @@
+[project]
+name = "ms-name-resolver"
+version = "0.1.0"
+description = "A microservice to resolve IDs to names from a MongoDB database."
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pymongo",
+]
+requires-python = ">=3.11"
+[tool.uv]

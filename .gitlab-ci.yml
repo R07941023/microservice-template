@@ -35,19 +35,6 @@ build-nextjs-service:
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
 
-build-auth-service:
-  <<: *default-build-image
-  stage: build
-  variables:
-    IMAGE_NAME: ms-auth-service
-    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
-    DOCKERFILE_PATH: ./backend/auth
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-
 build-ms-maple-drop-repo-service:
   <<: *default-build-image
   stage: build
@@ -55,6 +42,19 @@ build-ms-maple-drop-repo-service:
     IMAGE_NAME: ms-maple-drop-repo
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
     DOCKERFILE_PATH: ./backend/ms-maple-drop-repo
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+
+build-ms-name-resolver-service:
+  <<: *default-build-image
+  stage: build
+  variables:
+    IMAGE_NAME: ms-name-resolver
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+    DOCKERFILE_PATH: ./backend/ms-name-resolver
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
