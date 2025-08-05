@@ -6,6 +6,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "mysql-connector-python",
+    "httpx",
 ]
 requires-python = ">=3.11"
 
