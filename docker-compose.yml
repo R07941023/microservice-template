@@ -15,17 +15,6 @@ services:
     networks:
       - network-ms-template
 
-  ms-auth:
-    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
-    container_name: ms-auth
-    hostname: "ms-auth"
-    volumes:
-      - E:\\project\\microservice_template\\backend\\auth:/app
-    working_dir: /app
-    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
-    networks:
-      - network-ms-template
-
   ms-maple-drop-repo:
     image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
     container_name: ms-maple-drop-repo
@@ -39,6 +28,30 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD:  ${ITEM_DATA_DB_PASSWORD}
       MYSQL_DATABASE: TsmcMapleStoryV113
+    networks:
+      - network-ms-template
+
+  ms-name-resolver:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    container_name: ms-name-resolver
+    hostname: "ms-name-resolver"
+    volumes:
+      - E:\project\microservice_template\backend\ms-name-resolver:/app
+    working_dir: /app
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      MONGO_URI: "mongodb://host.docker.internal:30370/?directConnection=true"
+    networks:
+      - network-ms-template
+
+  ms-search-aggregator:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    container_name: ms-search-aggregator
+    hostname: "ms-search-aggregator"
+    volumes:
+      - E:\project\microservice_template\backend\ms-search-aggregator:/app
+    working_dir: /app
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - network-ms-template
 

@@ -17,6 +17,8 @@ export default function AddDropPage() {
     maximum_quantity: 0,
     questid: 0,
     chance: 0,
+    dropper_name: '',
+    item_name: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -60,6 +62,8 @@ export default function AddDropPage() {
         maximum_quantity: 0,
         questid: 0,
         chance: 0,
+        dropper_name: '',
+        item_name: '',
       }); // Clear form
       setTimeout(() => {
         setMessage(null);

@@ -9,6 +9,8 @@ export interface DropData {
   maximum_quantity: number;
   questid: number;
   chance: number;
+  dropper_name: string;
+  item_name: string;
 }
 
 export function useSearchData() {
@@ -99,7 +101,8 @@ export function useSearchData() {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to fetch data');
       }
-      const data: DropData[] = await response.json();
+      const responseData = await response.json();
+      const data: DropData[] = responseData.data; // Extract the array
       setSearchResults(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
