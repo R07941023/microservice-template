@@ -55,5 +55,21 @@ services:
     networks:
       - network-ms-template
 
+  ms-image-retriever:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    container_name: ms-image-retriever
+    hostname: "ms-image-retriever"
+    volumes:
+      - E:\project\microservice_template\backend\ms-image-retriever:/app
+    working_dir: /app
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      MINIO_ENDPOINT: host.docker.internal:30831
+      MINIO_BUCKET: maplestory
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    networks:
+      - network-ms-template
+
 networks:
   network-ms-template:
