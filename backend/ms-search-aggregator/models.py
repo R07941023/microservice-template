@@ -11,8 +11,6 @@ class AugmentedDrop(BaseModel):
     maximum_quantity: int
     questid: int
     chance: int
-    item_image_url: str
-    mob_image_url: str
 
 class AugmentedSearchResponse(BaseModel):
     data: List[AugmentedDrop]

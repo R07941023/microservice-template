@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from minio import Minio
 import os
@@ -32,15 +32,11 @@ async def get_image(type: str, dropper_id: str):
     try:
         # Get object data from MinIO
         response = minio_client.get_object(MINIO_BUCKET, object_name)
-        
+        data = response.read()
         # Stream the image back to the client
-        return StreamingResponse(response.stream(32*1024), media_type="image/png")
+        logger.info(f"Success to get {object_name}")
+        return Response(content=data, media_type="image/png")
     except Exception as e:
         # Log the error and return 404 if image not found
         logger.error(f"Error retrieving image '{object_name}': {e}")
         raise HTTPException(status_code=404, detail="Image not found")
-    finally:
-        # Ensure the connection is released
-        if 'response' in locals() and response:
-            response.close()
-            response.release_conn()

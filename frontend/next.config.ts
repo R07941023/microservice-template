@@ -16,9 +16,23 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: 'http://ms-maple-drop-repo:8000/:path*',
+        source: '/api/images/:path*',
+        destination: 'http://ms-image-retriever:8000/images/:path*',
       },
+      {
+        source: '/api/get_drop/:path*',
+        destination: 'http://ms-maple-drop-repo:8000/get_drop/:path*',
+      },
+      {
+        source: '/api/add_drop',
+        destination: 'http://ms-maple-drop-repo:8000/add_drop',
+      },
+      {
+        source: '/api/delete_drop/:path*',
+        destination: 'http://ms-maple-drop-repo:8000/delete_drop/:path*',
+      },
+      
+      
     ];
   },
   /* config options here */

@@ -3,7 +3,7 @@ import httpx
 import asyncio
 import logging
 from models import AugmentedDrop
-from . import name_resolver_client, drop_repo_client, image_retriever_client
+from . import name_resolver_client, drop_repo_client
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -29,9 +29,6 @@ async def search_and_augment_drops(client: httpx.AsyncClient, name: str) -> List
     dropper_names_task = name_resolver_client.resolve_ids_to_names(client, dropper_ids, "mob")
     item_names_task = name_resolver_client.resolve_ids_to_names(client, item_ids, "item")
     
-    item_image_urls = {str(item_id): image_retriever_client.get_image_url("item", str(item_id)) for item_id in item_ids}
-    mob_image_urls = {str(dropper_id): image_retriever_client.get_image_url("mob", str(dropper_id)) for dropper_id in dropper_ids}
-
     # Await the name resolution tasks
     dropper_names, item_names = await asyncio.gather(dropper_names_task, item_names_task)
 
@@ -41,7 +38,5 @@ async def search_and_augment_drops(client: httpx.AsyncClient, name: str) -> List
             **d,
             dropper_name=dropper_names.get(str(d['dropperid']), "Unknown"),
             item_name=item_names.get(str(d['itemid']), "Unknown"),
-            item_image_url=item_image_urls.get(str(d['itemid']), ""),
-            mob_image_url=mob_image_urls.get(str(d['dropperid']), ""),
         ) for d in drops
     ]
