@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-image-retriever
-          image: yenyinglu/ms-image-retriever:latest # Placeholder, will be updated by CI/CD
+          image: yenyinglu/ms-image-retriever:735113d3
           ports:
             - containerPort: 8000
           env:
