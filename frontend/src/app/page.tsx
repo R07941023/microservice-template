@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react'; // Add useEffect and useRef import
 import SearchComponent from '@/components/SearchComponent';
 import ResultsComponent from '@/components/ResultsComponent';
 import { useSearchData, DropData } from '@/hooks/useSearchData';
@@ -20,6 +21,15 @@ export default function Home() {
   } = useSearchData();
 
   const router = useRouter();
+
+  const initialSearchPerformed = useRef(false); // Use a ref to track if initial search happened
+
+  useEffect(() => {
+    if (!initialSearchPerformed.current && !searchTerm && searchResults.length === 0) {
+      initialSearchPerformed.current = true; // Set flag to true
+      handleSearch('三眼章魚'); // Automatically query
+    }
+  }, [searchTerm, searchResults, handleSearch]); // Dependencies
 
   const handleHistoryClick = (term: string) => {
     setSearchTerm(term);
