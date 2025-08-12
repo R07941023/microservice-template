@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-search-aggregator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ms-search-aggregator
+  template:
+    metadata:
+      labels:
+        app: ms-search-aggregator
+    spec:
+      containers:
+      - name: ms-search-aggregator
+        image: yenyinglu/ms-search-aggregator:a3138c3c
+        ports:
+        - containerPort: 8000

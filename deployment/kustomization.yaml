@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - frontend/deployment.yaml
+  - frontend/service.yaml
+  - frontend/ingress.yaml
+
+  - backend/ms-search-aggregator/deployment.yaml
+  - backend/ms-search-aggregator/service.yaml
+
+  - backend/ms-maple-drop-repo/deployment.yaml
+  - backend/ms-maple-drop-repo/service.yaml
+
+  - backend//ms-name-resolver/deployment.yaml
+  - backend//ms-name-resolver/service.yaml
+
+  - backend/ms-image-retriever/deployment.yaml
+  - backend/ms-image-retriever/service.yaml
+

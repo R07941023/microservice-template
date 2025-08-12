@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-image-retriever
+  labels:
+    app: ms-image-retriever
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ms-image-retriever
+  template:
+    metadata:
+      labels:
+        app: ms-image-retriever
+    spec:
+      containers:
+        - name: ms-image-retriever
+          image: yenyinglu/ms-image-retriever:latest # Placeholder, will be updated by CI/CD
+          ports:
+            - containerPort: 8000
+          env:
+            - name: MINIO_ENDPOINT
+              value: "minio.infra-net.svc.cluster.local:9000"
+            - name: MINIO_BUCKET
+              value: "maplestory"
+            - name: MINIO_ROOT_USER
+              value: "minio"
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keyvault
+                  key: MINIO_ROOT_PASSWORD

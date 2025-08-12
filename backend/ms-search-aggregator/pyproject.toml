@@ -1,0 +1,16 @@
+[project]
+name = "ms-search-aggregator"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "", email = ""}
+]
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "httpx"
+]
+
+[tool.uv]
+python = "3.11"
