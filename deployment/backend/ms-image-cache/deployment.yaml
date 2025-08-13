@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: ms-image-cache
-        image: ms-image-cache:latest
+        image: ms-image-cache:3f7b3126
         ports:
         - containerPort: 8000
         env:
