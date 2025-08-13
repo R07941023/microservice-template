@@ -21,7 +21,7 @@ spec:
             - containerPort: 8000
           env:
             - name: MINIO_ENDPOINT
-              value: "minio.infra-net.svc.cluster.local:9000"
+              value: "minio-nodeport.infra-net.svc.cluster.local:9000"
             - name: MINIO_BUCKET
               value: "maplestory"
             - name: MINIO_ROOT_USER
