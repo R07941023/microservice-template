@@ -67,13 +67,13 @@ async def search_drops(
     query_type: Literal["item", "mob"] = Query(..., description="Choose either 'item' or 'mob'"),
     cursor: cursor.MySQLCursorDict = Depends(get_db_cursor)
 ):
-    
     field = {
         "item": "itemid",
         "mob": "dropperid"
     }.get(query_type)
 
     sql_query = f"SELECT * FROM drop_data WHERE {field} = %s"
+    logger.info(sql_query, query)
     cursor.execute(sql_query, (query,))
     results = cursor.fetchall()
     for row in results:

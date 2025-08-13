@@ -15,3 +15,6 @@ resources:
   - backend//ms-name-resolver/deployment.yaml
   - backend//ms-name-resolver/service.yaml
 
+  - backend/ms-image-retriever/deployment.yaml
+  - backend/ms-image-retriever/service.yaml
+

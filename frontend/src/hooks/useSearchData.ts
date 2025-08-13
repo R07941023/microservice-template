@@ -80,11 +80,7 @@ export function useSearchData() {
     setSearchResults([]);
     setSelectedItem(null);
 
-    if (!token) {
-      setError("Error: You must be logged in to perform a search.");
-      setLoading(false);
-      return;
-    }
+    
 
     // Add to history if it's a new term
     if (!searchHistory.includes(termToSearch)) {

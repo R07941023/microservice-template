@@ -18,3 +18,4 @@ class AugmentedSearchResponse(BaseModel):
 class IdInfo(BaseModel):
     id: int
     type: Literal["item", "mob"]
+

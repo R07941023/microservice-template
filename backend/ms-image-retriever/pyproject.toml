@@ -1,0 +1,11 @@
+[project]
+name = "ms-image-retriever"
+version = "0.1.0"
+description = "A microservice to retrieve images from a MinIO storage."
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "minio",
+]
+requires-python = ">=3.11"
+[tool.uv]
