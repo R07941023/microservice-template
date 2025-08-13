@@ -9,4 +9,7 @@ backend/ms-search-aggregator/__pycache__
 backend/ms-search-aggregator/.venv
 backend/ms-search-aggregator/services/__pycache__
 backend/ms-image-retriever/__pycache__
+backend/ms-image-retriever/.venv
+backend/ms-image-cache/__pycache__
+backend/ms-image-cache/.venv
 .env
