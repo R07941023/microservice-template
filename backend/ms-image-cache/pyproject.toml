@@ -1,0 +1,14 @@
+[project]
+name = "ms-image-cache"
+version = "0.1.0"
+description = "A service to cache images from MinIO using Redis."
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "python-dotenv",
+    "redis",
+    "httpx", # For making HTTP requests to ms-image-retriever
+]
+requires-python = ">=3.11"
+
+[tool.uv]

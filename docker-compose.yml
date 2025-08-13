@@ -71,5 +71,23 @@ services:
     networks:
       - network-ms-template
 
+  ms-image-cache:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    container_name: ms-image-cache
+    hostname: "ms-image-cache"
+    volumes:
+      - E:\project\microservice_template\backend\ms-image-cache:/app
+    working_dir: /app
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "30104:8000"
+    environment:
+      REDIS_HOST: host.docker.internal
+      REDIS_PORT: 30930
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_CACHE_EXPIRATION_SECONDS: 3600
+    networks:
+      - network-ms-template
+
 networks:
   network-ms-template:
