@@ -100,6 +100,19 @@ build-ms-image-cache:
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
 
+build-ms-aggregator-cache:
+  <<: *default-build-image
+  stage: build
+  variables:
+    IMAGE_NAME: ms-aggregator-cache
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+    DOCKERFILE_PATH: ./backend/ms-aggregator-cache
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+
 create-release-mr:
   stage: release
   image: alpine:latest
