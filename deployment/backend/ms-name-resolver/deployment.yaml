@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-name-resolver
-          image: yenyinglu/ms-name-resolver:19497fce
+          image: yenyinglu/ms-name-resolver:357244a2
           ports:
             - containerPort: 8000
           env:
