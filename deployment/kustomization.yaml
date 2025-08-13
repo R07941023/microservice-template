@@ -21,3 +21,6 @@ resources:
   - backend/ms-image-cache/deployment.yaml
   - backend/ms-image-cache/service.yaml
 
+  - backend/ms-aggregator-cache/deployment.yaml
+  - backend/ms-aggregator-cache/service.yaml
+
