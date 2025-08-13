@@ -74,6 +74,19 @@ build-ms-search-aggregator:
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
 
+build-ms-image-retriever:
+  <<: *default-build-image
+  stage: build
+  variables:
+    IMAGE_NAME: ms-image-retriever
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+    DOCKERFILE_PATH: ./backend/ms-image-retriever
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+
 create-release-mr:
   stage: release
   image: alpine:latest

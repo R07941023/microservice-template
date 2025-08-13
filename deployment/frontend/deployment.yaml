@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: ms-nextjs-template
-          image: yenyinglu/ms-nextjs-service:735113d3
+          image: yenyinglu/ms-nextjs-service:19497fce
           ports:
             - containerPort: 3000
