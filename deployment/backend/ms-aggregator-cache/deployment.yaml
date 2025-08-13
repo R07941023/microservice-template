@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ms-image-cache
+  name: ms-aggregator-cache
   labels:
-    app: ms-image-cache
+    app: ms-aggregator-cache
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: ms-image-cache
+      app: ms-aggregator-cache
   template:
     metadata:
       labels:
-        app: ms-image-cache
+        app: ms-aggregator-cache
     spec:
       containers:
-      - name: ms-image-cache
-        image: yenyinglu/ms-image-cache:49cbcd75
+      - name: ms-aggregator-cache
+        image: yenyinglu/ms-aggregator-cache:49cbcd75
         ports:
         - containerPort: 8000
         env:
