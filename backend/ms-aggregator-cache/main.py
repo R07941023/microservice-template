@@ -4,6 +4,7 @@ import httpx
 import os
 import logging
 from dotenv import load_dotenv
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +26,8 @@ try:
         host=REDIS_HOST,
         port=REDIS_PORT,
         db=REDIS_DB,
-        password=REDIS_PASSWORD
+        password=REDIS_PASSWORD,
+        decode_responses=True  # Automatically decode responses to utf-8
     )
     redis_client.ping()
     logger.info(f"Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
@@ -37,15 +39,19 @@ except redis.exceptions.ConnectionError as e:
 async def search_with_cache(name: str):
     cache_key = f"search:{name}"
     
-    # Try to get from cache
-    cached_result = redis_client.get(cache_key)
-    if cached_result:
-        print(f"Cache hit for {name}")
-        return {"source": "cache", "data": cached_result.decode('utf-8')} # Assuming JSON string
+    # 1. Try to get from cache
+    if redis_client:
+        try:
+            cached_result = redis_client.get(cache_key)
+            if cached_result:
+                logger.info(f"Cache hit for {name}")
+                return json.loads(cached_result) # Return the parsed JSON object
+        except Exception as e:
+            logger.error(f"Error retrieving from Redis or parsing JSON: {e}")
+
+    logger.info(f"Cache miss for {name}, fetching from aggregator")
     
-    print(f"Cache miss for {name}, fetching from aggregator")
-    
-    # If not in cache, fetch from ms-search-aggregator
+    # 2. If not in cache, fetch from ms-search-aggregator
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
@@ -55,10 +61,16 @@ async def search_with_cache(name: str):
             response.raise_for_status()
             aggregator_data = response.json()
             
-            # Cache the result
-            redis_client.setex(cache_key, REDIS_CACHE_EXPIRATION_SECONDS, response.text)
-            
-            return {"source": "aggregator", "data": aggregator_data}
+            # 3. Cache the result
+            if redis_client:
+                try:
+                    # Cache the raw JSON string response
+                    redis_client.setex(cache_key, REDIS_CACHE_EXPIRATION_SECONDS, response.text)
+                    logger.info(f"Cached result for {name}")
+                except Exception as e:
+                    logger.error(f"Error caching result in Redis: {e}")
+
+            return aggregator_data
     except httpx.RequestError as e:
         raise HTTPException(status_code=500, detail=f"Error connecting to search aggregator: {e}")
     except httpx.HTTPStatusError as e:
@@ -66,6 +78,8 @@ async def search_with_cache(name: str):
 
 @app.get("/health")
 async def health_check():
+    if not redis_client:
+        raise HTTPException(status_code=500, detail="Redis client is not connected")
     try:
         redis_client.ping()
         return {"status": "ok", "redis": "connected"}
