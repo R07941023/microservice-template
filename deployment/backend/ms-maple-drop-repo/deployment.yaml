@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-maple-drop-repo
-          image: yenyinglu/ms-maple-drop-repo:8d9534a0
+          image: yenyinglu/ms-maple-drop-repo:0f32bfed
           ports:
             - containerPort: 8000
           env:

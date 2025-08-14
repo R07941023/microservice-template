@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: ms-aggregator-cache
-        image: yenyinglu/ms-aggregator-cache:8d9534a0
+        image: yenyinglu/ms-aggregator-cache:0f32bfed
         ports:
         - containerPort: 8000
         env:
