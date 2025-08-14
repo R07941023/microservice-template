@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     // Forward the request to the internal backend service
     // The backend service name is 'ms-maple-drop-repo' as defined in docker-compose.yml
     // Docker's internal DNS will resolve this hostname to the correct container IP.
-    const backendUrl = `http://ms-search-aggregator:8000/api/search/drops-augmented?name=${query}`
+    const backendUrl = `http://ms-aggregator-cache:8000/search/${query}`
     const backendResponse = await fetch(backendUrl, {
       headers: headers, // Pass headers to backend fetch
       cache: 'no-store',

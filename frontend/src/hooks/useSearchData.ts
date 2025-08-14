@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
 export interface DropData {
@@ -71,7 +71,7 @@ export function useSearchData() {
     }
   }, [searchTerm]);
 
-  const handleSearch = async (query?: string) => {
+  const handleSearch = useCallback(async (query?: string) => {
     const termToSearch = query || searchTerm;
     if (!termToSearch) return;
 
@@ -105,7 +105,16 @@ export function useSearchData() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, setLoading, setError, setSearchResults, setSelectedItem, searchHistory, setSearchHistory, token]);
+
+  const initialSearchPerformed = useRef(false); // Use a ref to track if initial search happened
+
+  useEffect(() => {
+    if (!initialSearchPerformed.current && !searchTerm && searchResults.length === 0) {
+      initialSearchPerformed.current = true; // Set flag to true
+      handleSearch('三眼章魚'); // Automatically query
+    }
+  }, [searchTerm, searchResults, handleSearch]); // Dependencies
 
   const handleDeleteHistory = (e: React.MouseEvent, termToDelete: string) => {
     e.stopPropagation(); // Prevent the history click from firing

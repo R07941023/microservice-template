@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/images/:path*',
-        destination: 'http://ms-image-retriever:8000/images/:path*',
+        destination: 'http://ms-image-cache:8000/images/:path*',
       },
       {
         source: '/api/get_drop/:path*',
