@@ -1,0 +1,15 @@
+[project]
+name = "ms-aggregator-cache"
+version = "0.1.0"
+description = "A service to cache search results from ms-search-aggregator using Redis."
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "python-dotenv",
+    "redis",
+    "httpx", # For making HTTP requests to ms-search-aggregator
+    "pyjwt", # For decoding JWTs
+]
+requires-python = ">=3.11"
+
+[tool.uv]

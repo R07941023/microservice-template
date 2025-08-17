@@ -8,13 +8,33 @@ services:
     working_dir: /app
     environment:
       - WATCHPACK_POLLING=true
-    # First, run npm install to ensure dependencies are present, then start the dev server.
     command: sh -c "npm install && npm run dev"
     ports:
       - "30102:3000"
     networks:
       - network-ms-template
 
+  kong:
+    image: kong:3.7
+    container_name: kong
+    hostname: "kong"
+    user: root
+    command: sh -c "kong migrations bootstrap && kong start"
+    environment:
+      KONG_DATABASE: "postgres"
+      KONG_PG_HOST: host.docker.internal
+      KONG_PG_PORT: 30631
+      KONG_PG_USER: postgres
+      KONG_PG_PASSWORD: ${POSTGRES_PASSWORD}
+      KONG_DECLARATIVE_CONFIG: "/usr/local/kong/kong.yaml"
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    networks:
+      - network-ms-template
+      
   ms-maple-drop-repo:
     image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
     container_name: ms-maple-drop-repo
@@ -68,6 +88,38 @@ services:
       MINIO_BUCKET: maplestory
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    networks:
+      - network-ms-template
+
+  ms-image-cache:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    container_name: ms-image-cache
+    hostname: "ms-image-cache"
+    volumes:
+      - E:\project\microservice_template\backend\ms-image-cache:/app
+    working_dir: /app
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      REDIS_HOST: host.docker.internal
+      REDIS_PORT: 30930
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_CACHE_EXPIRATION_SECONDS: 3600
+    networks:
+      - network-ms-template
+
+  ms-aggregator-cache:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    container_name: ms-aggregator-cache
+    hostname: "ms-aggregator-cache"
+    volumes:
+      - E:\project\microservice_template\backend\ms-aggregator-cache:/app
+    working_dir: /app
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      REDIS_HOST: host.docker.internal
+      REDIS_PORT: 30930
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_CACHE_EXPIRATION_SECONDS: 3600
     networks:
       - network-ms-template
 

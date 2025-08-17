@@ -16,12 +16,12 @@ spec:
     spec:
       containers:
         - name: ms-image-retriever
-          image: yenyinglu/ms-image-retriever:latest # Placeholder, will be updated by CI/CD
+          image: yenyinglu/ms-image-retriever:0f32bfed
           ports:
             - containerPort: 8000
           env:
             - name: MINIO_ENDPOINT
-              value: "minio.infra-net.svc.cluster.local:9000"
+              value: "minio-nodeport.infra-net.svc.cluster.local:9000"
             - name: MINIO_BUCKET
               value: "maplestory"
             - name: MINIO_ROOT_USER

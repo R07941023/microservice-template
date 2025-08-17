@@ -18,3 +18,9 @@ resources:
   - backend/ms-image-retriever/deployment.yaml
   - backend/ms-image-retriever/service.yaml
 
+  - backend/ms-image-cache/deployment.yaml
+  - backend/ms-image-cache/service.yaml
+
+  - backend/ms-aggregator-cache/deployment.yaml
+  - backend/ms-aggregator-cache/service.yaml
+

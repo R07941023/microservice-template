@@ -14,19 +14,15 @@ export async function GET(request: Request) {
   try {
     const headers: HeadersInit = {};
     if (authorizationHeader) {
-      headers['Authorization'] = authorizationHeader; // Add Authorization header if present
+      headers['Authorization'] = authorizationHeader;
     }
 
-    // Forward the request to the internal backend service
-    // The backend service name is 'ms-maple-drop-repo' as defined in docker-compose.yml
-    // Docker's internal DNS will resolve this hostname to the correct container IP.
-    const backendUrl = `http://ms-search-aggregator:8000/api/search/drops-augmented?name=${query}`
+    // Forward the request to the internal backend service via Kong
+    const backendUrl = `http://kong:8000/search/${query}`
     const backendResponse = await fetch(backendUrl, {
       headers: headers, // Pass headers to backend fetch
       cache: 'no-store',
     });
-
-    console.log(backendResponse);
 
     if (!backendResponse.ok) {
       const errorData = await backendResponse.json();
