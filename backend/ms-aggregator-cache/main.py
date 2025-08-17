@@ -1,10 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Request
 import redis
 import httpx
 import os
 import logging
 from dotenv import load_dotenv
 import json
+import jwt
+from auth import decode_jwt_from_header
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,7 +38,13 @@ except redis.exceptions.ConnectionError as e:
     redis_client = None
 
 @app.get("/search/{name}")
-async def search_with_cache(name: str):
+async def search_with_cache(
+    name: str,
+    authorization: str | None = Header(default=None),
+):
+    user_name, user_email = decode_jwt_from_header(authorization)
+    logger.info(f"Decoded user info: Name='{user_name}', Email='{user_email}'")
+
     cache_key = f"search:{name}"
     
     # 1. Try to get from cache
@@ -56,7 +64,8 @@ async def search_with_cache(name: str):
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 AUGMENTED_SERVICE_URL,
-                params={"name": name}
+                params={"name": name},
+                headers={"Authorization": authorization} if authorization else None
             )
             response.raise_for_status()
             aggregator_data = response.json()

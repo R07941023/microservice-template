@@ -1,0 +1,59 @@
+# deck dump --kong-addr http://host.docker.internal:8001
+# deck diff --kong-addr http://host.docker.internal:8001
+# deck sync --kong-addr http://host.docker.internal:8001
+_format_version: "3.0"
+consumers:
+- jwt_secrets:
+  - algorithm: RS256
+    key: https://keycloak.mydormroom.dpdns.org/realms/master
+    rsa_public_key: |-
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxt7KfzXFyM3vkPIhVnxZ
+      z23OiwRAqExURVD5qzpiGV3bN8zMVsxhwfWqABTmrHvDJKn1KbbBf4ACrf3I+HBZ
+      S2W0LHuF4okS/0W6/HLxw0yNLX9p9MGXmL6lB8rPlHe75Je6WkphKjEz2XsZt6xz
+      9ukHX1buY7AHXJkC7e1gz2rf0fyUtwinSXLPVK0RD0g0w5WHNIOuxlv1/vHrACOp
+      kWUJzl1JptLlyBvGcPyoe3dKR0UyfLukcQUz2rqszS4LUecTXfZGaibENi8BZ/rA
+      wQBcqp4mhS6g1qmOdgZQzc7X9e9c/DlWEZwR+TGLZvPrvTHtJdW5JCVO+3tsQ9os
+      cwIDAQAB
+      -----END PUBLIC KEY-----
+    secret: 4Z1wWut3SoLKoXKbVWn8IEnfnJjcMV8t
+  username: mydormroom
+services:
+- name: aggregator-cache-service
+  host: ms-aggregator-cache
+  port: 8000
+  protocol: http
+  connect_timeout: 60000
+  read_timeout: 60000
+  write_timeout: 60000
+  retries: 5
+  enabled: true
+  routes:
+  - name: aggregator-cache-route
+    paths:
+    - /search
+    path_handling: v1
+    strip_path: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    https_redirect_status_code: 426
+    preserve_host: false
+    plugins:
+    - name: jwt
+      enabled: true
+      config:
+        anonymous: null
+        claims_to_verify:
+        - exp
+        header_names:
+        - authorization
+        key_claim_name: iss
+        maximum_expiration: 0
+        run_on_preflight: true
+        secret_is_base64: false
+        uri_param_names:
+        - jwt

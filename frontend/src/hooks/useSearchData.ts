@@ -14,7 +14,7 @@ export interface DropData {
 }
 
 export function useSearchData() {
-  const { token } = useAuth(); // Get the token from AuthContext
+  const { authFetch } = useAuth(); // Get the global authFetch function
 
   const [searchTerm, setSearchTerm] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -88,11 +88,9 @@ export function useSearchData() {
     }
 
     try {
-      const response = await fetch(`/api/search_drops?query=${termToSearch}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      // Use the global authFetch
+      const response = await authFetch(`/api/search_drops?query=${termToSearch}`);
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to fetch data');
@@ -101,11 +99,16 @@ export function useSearchData() {
       const data: DropData[] = responseData.data; // Extract the array
       setSearchResults(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      // The authFetch will throw an error on 401, which will be caught here.
+      if (err instanceof Error && err.message.includes("Session expired")) {
+        setError("Your session has expired. You are being redirected to login.");
+      } else {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      }
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, setLoading, setError, setSearchResults, setSelectedItem, searchHistory, setSearchHistory, token]);
+  }, [searchTerm, authFetch, searchHistory, setSearchResults, setSelectedItem, setLoading, setError]);
 
   const initialSearchPerformed = useRef(false); // Use a ref to track if initial search happened
 

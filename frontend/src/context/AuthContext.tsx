@@ -16,6 +16,7 @@ interface AuthContextType {
   loading: boolean;
   login: () => void;
   logout: () => void;
+  authFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,6 +36,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     keycloak.logout();
   }, []);
 
+  // Global fetch wrapper
+  const authFetch = useCallback(async (url: string, options: RequestInit = {}) => {
+    if (!token) {
+      login(); // No token available, redirect to login
+      throw new Error("No token available. Redirecting to login.");
+    }
+
+    const headers = {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+    };
+
+    const response = await fetch(url, { ...options, headers });
+
+    if (response.status === 401) {
+      login(); // Redirect to login
+      throw new Error("Session expired. Redirecting to login."); 
+    }
+
+    return response;
+  }, [token, login]);
+
   useEffect(() => {
     if (isKeycloakInitialized) {
       return; // Already initialized, do nothing
@@ -43,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initKeycloak = async () => {
       try {
         const auth = await keycloak.init({
-          onLoad: 'check-sso',
+          onLoad: 'login-required',
           silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
         });
 
@@ -88,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [isKeycloakInitialized]); // Add isKeycloakInitialized to dependency array
 
   return (
-    <AuthContext.Provider value={{ user, token, authenticated, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, authenticated, loading, login, logout, authFetch }}>
       {children}
     </AuthContext.Provider>
   );
