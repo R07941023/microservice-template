@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-image-retriever
-          image: yenyinglu/ms-image-retriever:0f32bfed
+          image: yenyinglu/ms-image-retriever:005f21e1
           ports:
             - containerPort: 8000
           env:
