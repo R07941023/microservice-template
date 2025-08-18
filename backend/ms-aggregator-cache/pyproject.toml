@@ -8,6 +8,7 @@ dependencies = [
     "python-dotenv",
     "redis",
     "httpx", # For making HTTP requests to ms-search-aggregator
+    "pyjwt", # For decoding JWTs
 ]
 requires-python = ">=3.11"
 

@@ -1,25 +1,16 @@
 'use client';
 
-import { GoogleLogin } from '@react-oauth/google';
-import { useAuth } from '@/context/AuthContext';
-import Image from 'next/image';
+import { useAuth } from '../context/AuthContext'; // Use relative path
 
 const LoginComponent = () => {
-  const { user, login, logout } = useAuth();
+  const { authenticated, user, login, logout } = useAuth();
 
-  if (user) {
+  if (authenticated) {
     return (
       <div className="flex items-center space-x-2">
-        {user.picture && (
-          <Image
-            src={user.picture}
-            alt="User Avatar"
-            width={32}      // 對應 w-8 = 2rem = 32px
-            height={32}
-            className="rounded-full"
-          />
-        )}
-        <span className="text-white text-sm hidden md:block">{user.name || user.email}</span>
+        <span className="text-white text-sm hidden md:block">
+          {user?.username || user?.email || "Logged In"}
+        </span>
         <button
           onClick={logout}
           className="bg-red-500 hover:bg-red-700 text-white text-sm py-1 px-3 rounded"
@@ -31,18 +22,12 @@ const LoginComponent = () => {
   }
 
   return (
-    <GoogleLogin
-      text="signin_with"
-      theme="filled_black"
-      onSuccess={credentialResponse => {
-        if (credentialResponse.credential) {
-          login(credentialResponse.credential);
-        }
-      }}
-      onError={() => {
-        console.log('Login Failed');
-      }}
-    />
+    <button
+      onClick={login}
+      className="bg-blue-500 hover:bg-blue-700 text-white text-sm font-bold py-1 px-3 rounded"
+    >
+      Login
+    </button>
   );
 };
 
