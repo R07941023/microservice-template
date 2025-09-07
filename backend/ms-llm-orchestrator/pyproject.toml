@@ -1,0 +1,11 @@
+[project]
+name = "ms-llm-orchestrator"
+version = "0.1.0"
+description = "A FastAPI service for LLM, RAG, and other generative AI tasks."
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "ollama"
+]
+
+[tool.uv]

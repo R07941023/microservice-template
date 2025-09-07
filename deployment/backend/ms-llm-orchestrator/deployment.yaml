@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-llm-orchestrator
+  labels:
+    app: ms-llm-orchestrator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ms-llm-orchestrator
+  template:
+    metadata:
+      labels:
+        app: ms-llm-orchestrator
+    spec:
+      containers:
+        - name: ms-llm-orchestrator
+          image: yenyinglu/ms-llm-orchestrator:0f32bfed
+          ports:
+            - containerPort: 8000

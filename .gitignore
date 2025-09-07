@@ -14,4 +14,6 @@ backend/ms-image-cache/__pycache__
 backend/ms-image-cache/.venv
 backend/ms-aggregator-cache/__pycache__
 backend/ms-aggregator-cache/.venv
+backend/ms-llm-orchestrator/.venv
+backend/ms-llm-orchestrator/__pycache__
 .env

@@ -1,29 +1,48 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
-// Helper function to create a delay
-function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+// It's a good practice to use an environment variable for the service URL
+const ORCHESTRATOR_URL = process.env.LLM_ORCHESTRATOR_URL || 'http://ms-llm-orchestrator:8000/stream-chat';
 
-// This function simulates a streaming response from an LLM.
-export async function POST() {
-  const text = "這是一個來自後端的模擬流式回應。透過這種方式，我們可以先專注於前端的數據流處理和 UI 呈現，而無需等待真實後端的完成。";
-  const chunks = text.split('');
+export async function POST(req: NextRequest) {
+  try {
+    // Get the prompt from the client
+    const body = await req.json();
+    const prompt = body.prompt;
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
-      for (const chunk of chunks) {
-        controller.enqueue(encoder.encode(chunk));
-        await sleep(50); // Simulate a delay for each token
-      }
-      controller.close();
-    },
-  });
+    if (!prompt) {
+      return new Response('Prompt is required', { status: 400 });
+    }
 
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-    },
-  });
+    // Forward the request to the Python backend
+    const response = await fetch(ORCHESTRATOR_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt: prompt }),
+    });
+
+    // Check if the request to the backend was successful
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Error from orchestrator service: ${errorText}`);
+      return new Response(errorText, { status: response.status });
+    }
+
+    // The body from the fetch response is already a ReadableStream.
+    // We can pipe it directly to the client.
+    if (response.body) {
+      return new Response(response.body, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      });
+    } else {
+      return new Response('Empty response body from the service', { status: 500 });
+    }
+
+  } catch (error) {
+    console.error('Error in chat API route:', error);
+    return new Response('An internal server error occurred.', { status: 500 });
+  }
 }
