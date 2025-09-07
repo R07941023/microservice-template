@@ -115,7 +115,7 @@ export function useSearchData() {
   useEffect(() => {
     if (!initialSearchPerformed.current && !searchTerm && searchResults.length === 0) {
       initialSearchPerformed.current = true; // Set flag to true
-      handleSearch('三眼章魚'); // Automatically query
+      handleSearch('朱礦石母礦'); // Automatically query
     }
   }, [searchTerm, searchResults, handleSearch]); // Dependencies
 
