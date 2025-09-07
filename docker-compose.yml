@@ -123,5 +123,18 @@ services:
     networks:
       - network-ms-template
 
+  ms-llm-orchestrator:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    container_name: ms-llm-orchestrator
+    hostname: "ms-llm-orchestrator"
+    volumes:
+      - E:\project\microservice_template\backend\ms-llm-orchestrator:/app
+    working_dir: /app
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "30104:8000"
+    networks:
+      - network-ms-template
+
 networks:
   network-ms-template:
