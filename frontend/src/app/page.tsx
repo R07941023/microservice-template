@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import SearchComponent from '@/components/SearchComponent';
 import ResultsComponent from '@/components/ResultsComponent';
 import { useSearchData, DropData } from '@/hooks/useSearchData';
+import ChatComponent from '@/components/ChatComponent';
 
 
 export default function Home() {
@@ -20,10 +21,6 @@ export default function Home() {
   } = useSearchData();
 
   const router = useRouter();
-
-  
-
-  
 
   const handleHistoryClick = (term: string) => {
     setSearchTerm(term);
@@ -62,6 +59,7 @@ export default function Home() {
         searchTerm={searchTerm}
         handleItemClick={handleItemClick}
       />
+      <ChatComponent />
     </div>
   );
 }
