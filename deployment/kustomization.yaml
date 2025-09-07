@@ -24,3 +24,5 @@ resources:
   - backend/ms-aggregator-cache/deployment.yaml
   - backend/ms-aggregator-cache/service.yaml
 
+  - backend/ms-llm-orchestrator/deployment.yaml
+  - backend/ms-llm-orchestrator/service.yaml
