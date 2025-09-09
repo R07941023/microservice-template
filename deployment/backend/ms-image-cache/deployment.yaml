@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: ms-image-cache
-        image: yenyinglu/ms-image-cache:0575ae75
+        image: yenyinglu/ms-image-cache:ddab6b02
         ports:
         - containerPort: 8000
         env:
