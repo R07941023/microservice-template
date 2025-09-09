@@ -113,6 +113,7 @@ services:
     hostname: "ms-aggregator-cache"
     volumes:
       - E:\project\microservice_template\backend\ms-aggregator-cache:/app
+      - E:\project\microservice_template\backend\utils:/app/utils
     working_dir: /app
     command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
@@ -129,8 +130,14 @@ services:
     hostname: "ms-llm-orchestrator"
     volumes:
       - E:\project\microservice_template\backend\ms-llm-orchestrator:/app
+      - E:\project\microservice_template\backend\utils:/app/utils
     working_dir: /app
     command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      POSTGRES_HOST: host.docker.internal
+      POSTGRES_PORT: 30631
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "30104:8000"
     networks:

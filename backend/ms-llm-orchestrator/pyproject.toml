@@ -5,7 +5,10 @@ description = "A FastAPI service for LLM, RAG, and other generative AI tasks."
 dependencies = [
     "fastapi",
     "uvicorn",
-    "ollama"
+    "ollama",
+    "asyncpg",
+    "pyjwt", # For decoding JWTs
+    "pydantic-settings",
 ]
 
 [tool.uv]

@@ -1,14 +1,14 @@
 import { NextRequest } from 'next/server';
 
 // It's a good practice to use an environment variable for the service URL
-const ORCHESTRATOR_URL = process.env.LLM_ORCHESTRATOR_URL || 'http://ms-llm-orchestrator:8000/stream-chat';
+const ORCHESTRATOR_URL = process.env.LLM_ORCHESTRATOR_URL || 'http://kong:8000/stream-chat';
 
 export async function POST(req: NextRequest) {
   try {
     // Get the prompt from the client
     const body = await req.json();
     const prompt = body.prompt;
-
+    const authorizationHeader = req.headers.get('Authorization') || ""; // Get Authorization header
     if (!prompt) {
       return new Response('Prompt is required', { status: 400 });
     }
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': authorizationHeader,
       },
       body: JSON.stringify({ prompt: prompt }),
     });
