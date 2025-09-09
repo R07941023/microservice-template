@@ -5,8 +5,7 @@ import os
 import logging
 from dotenv import load_dotenv
 import json
-import jwt
-from auth import decode_jwt_from_header
+from utils.auth import decode_jwt_from_header
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

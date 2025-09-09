@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, useRef, useEffect } from 'react';
 import { chatTexts } from '@/constants/text';
+import { useAuth } from '@/context/AuthContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -13,6 +14,7 @@ export default function ChatComponent() {
   const [input, setInput] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { authFetch } = useAuth(); // Get the global authFetch function
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,7 +35,7 @@ export default function ChatComponent() {
     setInput('');
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await authFetch('/api/chat', {
         method: 'POST',
         body: JSON.stringify({ prompt: input }),
       });

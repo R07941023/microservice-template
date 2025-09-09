@@ -57,3 +57,41 @@ services:
         secret_is_base64: false
         uri_param_names:
         - jwt
+- name: llm-orchestrator-service
+  host: ms-llm-orchestrator
+  port: 8000
+  protocol: http
+  connect_timeout: 60000
+  read_timeout: 60000
+  write_timeout: 60000
+  retries: 5
+  enabled: true
+  routes:
+  - name: llm-orchestrator-stream-chat-route
+    paths:
+    - /stream-chat
+    path_handling: v1
+    strip_path: false
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: false
+    response_buffering: false
+    https_redirect_status_code: 426
+    preserve_host: false
+    plugins:
+    - name: jwt
+      enabled: true
+      config:
+        anonymous: null
+        claims_to_verify:
+        - exp
+        header_names:
+        - authorization
+        key_claim_name: iss
+        maximum_expiration: 0
+        run_on_preflight: true
+        secret_is_base64: false
+        uri_param_names:
+        - jwt
