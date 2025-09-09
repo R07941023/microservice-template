@@ -15,8 +15,8 @@ stages:
   before_script:
     - docker info
   script:
-    - echo "Build $IMAGE_NAME Docker image"
-    - docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG $DOCKERFILE_PATH
+    - echo "Build $IMAGE_NAME Docker image with root context"                                                                                                                │
+    - docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG -f $DOCKERFILE_PATH/Dockerfile .
     - echo "Login to Docker Hub"
     - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
     - echo "Push to Docker Hub"
