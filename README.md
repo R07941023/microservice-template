@@ -1,162 +1,143 @@
-## Screenshots
+# MapleStory Drop Data Microservice Monorepo
 
-### Main Page Example
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/) [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/) [![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)
+
+A monorepo project based on a microservice architecture, designed to provide a modern, high-performance interface to query, manage, and interact with MapleStory drop data through a Large Language Model (LLM).
+
+## Demo
+
+**Main Page**
 
 ![Main Page Example](./images/demo.jpg)
 
-### System Design
+---
+
+**System Design**
 
 ![System Design](./images/system_design.jpg)
 
-# MapleStory Drop Data Microservice Monorepo
+## Key Features
 
-This project is a monorepo designed to manage and display MapleStory drop data, leveraging a microservice architecture for scalability and maintainability. It includes a Next.js frontend and several Python FastAPI backend services.
+- **Advanced Search**: Aggregated search functionality across multiple data sources.
+- **LLM-Powered Chatbot**: Query drop information using natural language (powered by RAG).
+- **Data Management**: Full CRUD (Create, Read, Update, Delete) operations for drop data.
+- **Image Service**: Dynamic retrieval and caching of in-game mob and item images.
+- **API Gateway**: Centralized and secure API management via Kong.
+- **Authentication**: API endpoints secured with JWT and Keycloak.
+- **Fully Containerized**: Simplified development setup using Docker and Docker Compose.
+- **CI/CD Ready**: Pre-configured GitLab CI for automated builds and deployments.
 
-## Features
+## System Architecture
 
-- **Drop Data Management:** CRUD operations for MapleStory drop records.
-- **Image Retrieval:** Dynamic retrieval and display of mob and item images.
-- **Name Resolution:** Resolving IDs to names and names to IDs for game entities.
-- **Aggregated Search:** Comprehensive search functionality for drop data.
-- **User Authentication:** (Implied by `useAuth` context, but not fully implemented in provided code).
-- **Containerized Development:** Easy local setup using Docker Compose.
-- **CI/CD Pipeline:** Automated build and release process with GitLab CI.
+This project utilizes a microservice architecture. The frontend is powered by Next.js, and the backend consists of multiple independent Python (FastAPI) services, with routing managed by the Kong API Gateway.
 
-## Architecture Overview
+### Services
 
-The project follows a microservice architecture, orchestrated by Docker Compose for local development. API calls from the Next.js frontend are handled through a mix of Next.js App Router API routes and direct rewrites configured in `next.config.ts`.
+| Service Name | Technology | Description |
+| :--- | :--- | :--- |
+| `frontend` | Next.js | The user interface, which interacts with the backend APIs. |
+| `kong` | Kong | API Gateway that handles routing, load balancing, and authentication. |
+| `ms-llm-orchestrator` | FastAPI | **Core Service**. Handles LLM chat and RAG logic. |
+| `ms-search-aggregator` | FastAPI | **Search Coordinator**. Aggregates data from other services to provide search results. |
+| `ms-maple-drop-repo` | FastAPI | The primary repository for drop data, using MySQL. |
+| `ms-name-resolver` | FastAPI | Resolver for game entity (mob, item) names and IDs, using MongoDB. |
+| `ms-image-retriever` | FastAPI | Retrieves images from MinIO object storage. |
+| `ms-aggregator-cache` | FastAPI | A Redis service for caching aggregated search results. |
+| `ms-image-cache` | FastAPI | A Redis service for caching images. |
 
-### Services:
+### Data Stores
 
-- **`ms-nextjs-template` (Frontend):** A Next.js application serving the user interface.
-- **`ms-maple-drop-repo` (Backend):** Manages MapleStory drop data in a MySQL database.
-- **`ms-name-resolver` (Backend):** Resolves game entity names and IDs using MongoDB.
-- **`ms-search-aggregator` (Backend):** Aggregates search results by orchestrating calls to other microservices.
-- **`ms-image-retriever` (Backend):** Retrieves images from a MinIO object storage.
+- **PostgreSQL** (with **pgvector**): Used by Kong and `ms-llm-orchestrator`. The `pgvector` extension enables efficient vector similarity search for the RAG pipeline.
+- **MySQL**: The primary database for `ms-maple-drop-repo`.
+- **MongoDB**: The primary database for `ms-name-resolver`.
+- **Redis**: Used for `ms-aggregator-cache` and `ms-image-cache`.
+- **MinIO**: Object storage for images.
+
+## What is Retrieval-Augmented Generation (RAG)?
+
+RAG stands for **Retrieval-Augmented Generation**. It is an AI framework designed to address two core challenges with Large Language Models (LLMs):
+
+1.  **Knowledge Cutoffs**: LLMs only know about the data they were trained on and are unaware of new information or private, domain-specific knowledge (like the drop data in your database).
+2.  **Hallucinations**: When lacking sufficient information, an LLM might generate plausible but incorrect or fabricated information.
+
+### How RAG Works in This Project
+
+The RAG process in this project can be broken down into two main steps:
+
+1.  **Retrieval**: When a user asks a question (e.g., *"Which mobs drop 'Wisdom Crystals'?"*), the system does **not** send the query directly to the LLM. Instead, it first uses the query to search the external knowledge base (your data in **PostgreSQL with the pgvector extension**) to find the most relevant information.
+
+2.  **Augmented Generation**: The system then "bundles" the retrieved information with the original question into a more detailed 'Augmented Prompt'. This is sent to the LLM, effectively telling it: *"Please answer the user's question based on the reference material I'm providing."*
+
+This allows the LLM to generate a response based on real-time, accurate data from your database, rather than relying solely on its static, internal knowledge. In short, RAG gives the LLM an external "hard drive" or a "search engine" it can use to look up the latest and most accurate information on demand.
 
 ## Technology Stack
 
-- **Frontend:**
-  - Next.js (React Framework)
-  - React
-  - TypeScript
-  - Tailwind CSS
-  - React Icons
-- **Backend (Python Microservices):**
-  - FastAPI
-  - Uvicorn (ASGI server)
-  - `mysql-connector-python` (for MySQL)
-  - `pymongo` (for MongoDB)
-  - `minio` (for MinIO object storage)
-  - `httpx` (HTTP client for inter-service communication)
-- **Database/Storage:**
-  - MySQL
-  - MongoDB
-  - MinIO Object Storage
-- **Containerization:**
-  - Docker
-  - Docker Compose
-- **CI/CD:**
-  - GitLab CI
+- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
+- **Backend**: Python, FastAPI, Uvicorn
+- **API Gateway**: Kong
+- **Databases/Storage**: PostgreSQL (with pgvector), MySQL, MongoDB, Redis, MinIO
+- **Containerization**: Docker, Docker Compose
+- **CI/CD**: GitLab CI
+- **Deployment**: Kubernetes (Kustomize)
 
-## Setup and Local Development
+## Local Development Setup
 
 ### Prerequisites
 
-- Docker Desktop (or Docker Engine and Docker Compose)
-- Git
+- [Docker](https://www.docker.com/products/docker-desktop/)
+- [Git](https://git-scm.com/)
 
-### Cloning the Repository
+### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone <your-repository-url>
 cd microservice_template
 ```
 
-### Environment Variables
+### 2. Configure Environment Variables
 
-Create a `.env` file in the project root with the following environment variables. These are used by `docker-compose.yml` to configure the backend services.
+Create a file named `.env` in the project root. This file contains the necessary secrets and settings for `docker-compose.yml`.
 
-```dotenv
-# Example .env content
+**`.env` Template:**
+```env
+# Password for the Postgres database used by Kong
+POSTGRES_PASSWORD=your_postgres_password
+
+# Password for the MySQL database used by ms-maple-drop-repo
 ITEM_DATA_DB_PASSWORD=your_mysql_password
+
+# Password for MinIO object storage
 MINIO_ROOT_PASSWORD=your_minio_password
-MONGO_URI=mongodb://host.docker.internal:30370/?directConnection=true # Adjust port if needed
+
+# Password for the Redis cache services
+REDIS_PASSWORD=your_redis_password
 ```
 
-### Running Services with Docker Compose
+### 3. Run All Services
 
-Navigate to the project root directory and run:
+Execute the following command in the project root to build and start all services.
 
 ```bash
-docker-compose up --build
+docker-compose up --build -d
 ```
+- `--build`: Forces a rebuild of the Docker images.
+- `-d`: Runs containers in detached mode.
 
-This command will:
-- Build Docker images for all services (if not already built).
-- Start all microservices and the Next.js frontend.
-- Create a shared Docker network for inter-service communication.
+### 4. Accessing Services
 
-### Accessing the Frontend
+- **Frontend Application**: [http://localhost:30102](http://localhost:30102)
+- **Kong Admin API**: [http://localhost:8001](http://localhost:8001) (useful for checking API Gateway status)
 
-The Next.js frontend will be accessible at `http://localhost:30102` (as configured in `docker-compose.yml`).
+Backend microservices are not exposed directly. All requests should be routed through the frontend or the Kong API Gateway.
 
-## API Endpoints Overview
+## API Gateway (Kong)
 
-This section provides a brief overview of the main API endpoints exposed by the backend microservices.
+This project uses Kong as its API Gateway, serving as the main entry point for backend services.
 
-- **Drop Repository Service (`ms-maple-drop-repo`)**
-  - `GET /get_drop/{id}`: Retrieve a drop record.
-  - `POST /add_drop`: Add a new drop record.
-  - `PUT /update_drop/{id}`: Update a drop record.
-  - `DELETE /delete_drop/{id}`: Delete a drop record.
-  - _Note: The `/api/search_drops` endpoint is handled by the Next.js App Router API route, which then calls `ms-search-aggregator`._
+- **Declarative Configuration**: All routes and plugins are declaratively configured in `kong.yaml`.
+- **Routing**: Routes incoming requests (e.g., `/stream-chat`) to the corresponding backend service (e.g., `ms-llm-orchestrator`).
+- **Authentication**: Uses the `jwt` plugin to authenticate API requests, ensuring that only authorized clients can access the services.
 
-- **Name Resolver Service (`ms-name-resolver`)**
-  - `POST /api/id-names/resolve`: Resolve IDs to names.
-  - `POST /api/names-id/resolve`: Resolve names to IDs.
+## Deployment
 
-- **Search Aggregator Service (`ms-search-aggregator`)**
-  - `GET /api/search/drops-augmented?name=<query>`: Aggregates and augments drop search results.
-
-- **Image Retriever Service (`ms-image-retriever`)**
-  - `GET /images/{type}/{id}`: Retrieve images (e.g., mob, item).
-
-## Frontend API Routing (next.config.ts rewrites)
-
-The `frontend/next.config.ts` file defines rewrite rules to proxy certain API calls directly to the backend microservices, bypassing Next.js App Router API routes for those specific paths.
-
-```typescript
-// Excerpt from next.config.ts
-async rewrites() {
-  return [
-    {
-      source: '/api/images/:path*',
-      destination: 'http://ms-image-retriever:8000/images/:path*',
-    },
-    {
-      source: '/api/get_drop/:path*',
-      destination: 'http://ms-maple-drop-repo:8000/get_drop/:path*',
-    },
-    {
-      source: '/api/add_drop',
-      destination: 'http://ms-maple-drop-repo:8000/add_drop',
-    },
-    {
-      source: '/api/delete_drop/:path*',
-      destination: 'http://ms-maple-drop-repo:8000/delete_drop/:path*',
-    },
-    // Note: /api/search_drops is handled by a Next.js App Router API route (src/app/api/search_drops/route.ts)
-    // and then calls ms-search-aggregator.
-  ];
-},
-```
-
-## CI/CD and Deployment
-
-This project uses GitLab CI for its Continuous Integration and Continuous Deployment pipeline.
-
-- **Build Stage:** Docker images for the frontend and most backend microservices are built and pushed to Docker Hub on every commit to the `dev` branch.
-  - _Note: `ms-image-retriever` currently lacks a dedicated build job in `.gitlab-ci.yml`._
-- **Release Stage:** On commits to the `dev` branch, a Merge Request is automatically created to update image tags in `deployment.yaml` files and push them to the `main` branch.
-
+The `deployment/` directory contains Kubernetes manifests for all services, managed with Kustomize. The `.gitlab-ci.yml` file defines a CI/CD pipeline for automatically building Docker images and pushing them to the `main` branch.

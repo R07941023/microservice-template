@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-llm-orchestrator
+  labels:
+    app: ms-llm-orchestrator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ms-llm-orchestrator
+  template:
+    metadata:
+      labels:
+        app: ms-llm-orchestrator
+    spec:
+      containers:
+        - name: ms-llm-orchestrator
+          image: yenyinglu/ms-llm-orchestrator:45c22559
+          ports:
+            - containerPort: 8000
+          env:
+            - name: POSTGRES_HOST
+              value: "host.docker.internal"
+            - name: POSTGRES_PORT
+              value: "30631"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keyvault
+                  key: POSTGRES_PASSWORD
+

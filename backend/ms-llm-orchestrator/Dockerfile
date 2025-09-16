@@ -4,10 +4,10 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir uv
 
-COPY backend/ms-image-retriever/pyproject.toml backend/ms-image-retriever/uv.lock* ./
+COPY backend/ms-llm-orchestrator/pyproject.toml backend/ms-llm-orchestrator/uv.lock* ./
 RUN uv sync --no-dev --frozen
 
-COPY backend/ms-image-retriever/ ./
+COPY backend/ms-llm-orchestrator/ ./
 COPY backend/utils/ ./utils/
 
 EXPOSE 8000
