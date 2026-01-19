@@ -36,7 +36,7 @@ export default function Home() {
       <SearchComponent
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        handleSearch={() => handleSearch()}
+        handleSearch={handleSearch}
         loading={loading}
         searchHistory={searchHistory}
         handleHistoryClick={handleHistoryClick}

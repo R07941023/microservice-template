@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
         source: '/api/delete_drop/:path*',
         destination: 'http://ms-maple-drop-repo:8000/delete_drop/:path*',
       },
+      {
+        source: '/api/names/all',
+        destination: 'http://ms-name-resolver:8000/api/names/all',
+      },
       
       
     ];

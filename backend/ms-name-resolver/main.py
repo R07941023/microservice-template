@@ -3,7 +3,7 @@ from typing import List, Dict
 import os
 from pymongo import MongoClient
 import logging
-from models import ResolveNamesRequest, ResolveNamesResponse, ResolveIdsRequest, ResolveIdsResponse
+from models import ResolveNamesRequest, ResolveNamesResponse, ResolveIdsRequest, ResolveIdsResponse, GetAllNamesResponse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -47,4 +47,10 @@ async def resolve_ids(request: ResolveIdsRequest):
     }
     
     return ResolveIdsResponse(ids=ids)
+
+@app.get("/api/names/all", response_model=GetAllNamesResponse)
+async def get_all_names():
+    # Query for all unique names in the collection
+    names = collection.distinct("name")
+    return GetAllNamesResponse(names=names)
 
