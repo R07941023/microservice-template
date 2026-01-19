@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useDevMode } from '@/context/DevContext'; // Import useDevMode
 
 export interface DropData {
   id: string;
@@ -13,8 +14,16 @@ export interface DropData {
   item_name: string;
 }
 
+export interface AggregatedExistenceInfo {
+  id: number;
+  type: string;
+  image_exist: boolean;
+  drop_exist: boolean;
+}
+
 export function useSearchData() {
   const { authFetch } = useAuth(); // Get the global authFetch function
+  const { devMode } = useDevMode(); // Get devMode from context
 
   const [searchTerm, setSearchTerm] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -32,6 +41,7 @@ export function useSearchData() {
     return [];
   });
 
+  const [alternativeIds, setAlternativeIds] = useState<AggregatedExistenceInfo[]>([]);
   const [selectedItem, setSelectedItem] = useState<DropData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +88,7 @@ export function useSearchData() {
     setLoading(true);
     setError(null);
     setSearchResults([]);
+    setAlternativeIds([]); // Reset alternative IDs on new search
     setSelectedItem(null);
 
     
@@ -88,16 +99,36 @@ export function useSearchData() {
     }
 
     try {
-      // Use the global authFetch
-      const response = await authFetch(`/api/search_drops?query=${termToSearch}`);
+      // Use the global authFetch for the main search
+      const headers: HeadersInit = {
+        'X-Dev-Mode': String(devMode), // Pass devMode status
+      };
+
+      const response = await authFetch(`/api/search_drops?query=${termToSearch}`, { headers });
       
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to fetch data');
       }
+      
       const responseData = await response.json();
-      const data: DropData[] = responseData.data; // Extract the array
+      const data: DropData[] = responseData.data;
       setSearchResults(data);
+
+      // If no results, fetch alternative IDs from ms-search-aggregator
+      if (data.length === 0) {
+        try {
+          const idsResponse = await authFetch(`/api/existence-check/${termToSearch}`);
+          if (idsResponse.ok) {
+            const idsData = await idsResponse.json();
+            setAlternativeIds(idsData.results || []); // Assuming results is the key
+          }
+        } catch (idError) {
+          // Don't set the main error state for this, just log it
+          console.error("Failed to fetch aggregated existence data", idError);
+        }
+      }
+
     } catch (err: unknown) {
       // The authFetch will throw an error on 401, which will be caught here.
       if (err instanceof Error && err.message.includes("Session expired")) {
@@ -108,7 +139,7 @@ export function useSearchData() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, authFetch, searchHistory, setSearchResults, setSelectedItem, setLoading, setError]);
+  }, [searchTerm, authFetch, searchHistory, setSearchResults, setSelectedItem, setLoading, setError, devMode]); // Add devMode to dependency array
 
   const initialSearchPerformed = useRef(false); // Use a ref to track if initial search happened
 
@@ -136,5 +167,6 @@ export function useSearchData() {
     searchHistory,
     handleSearch,
     handleDeleteHistory,
+    alternativeIds, // Export the new state
   };
 }

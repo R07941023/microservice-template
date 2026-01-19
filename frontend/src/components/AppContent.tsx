@@ -3,6 +3,7 @@
 import { ReactNode } from "react";
 import { useAuth } from "@/context/AuthContext";
 import LoginComponent from "@/components/LoginComponent";
+import DevToggle from '@/components/DevToggle';
 
 const AppContent = ({ children }: { children: ReactNode }) => {
   const { loading } = useAuth();
@@ -31,6 +32,7 @@ const AppContent = ({ children }: { children: ReactNode }) => {
         <div className="container mx-auto"> MapleStory V113 Item Database. All rights reserved.
         </div>
       </footer>
+      <DevToggle />
     </div>
   );
 };

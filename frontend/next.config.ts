@@ -35,9 +35,15 @@ const nextConfig: NextConfig = {
         source: '/api/names/all',
         destination: 'http://ms-name-resolver:8000/api/names/all',
       },
-      
-      
-    ];
+      {
+        source: '/api/name-to-ids/:path*',
+        destination: 'http://ms-name-resolver:8000/api/name-to-ids/:path*',
+      },
+      {
+        source: '/api/existence-check/:path*',
+        destination: 'http://ms-search-aggregator:8000/api/existence-check/:path*',
+      },
+    ]
   },
   /* config options here */
 };

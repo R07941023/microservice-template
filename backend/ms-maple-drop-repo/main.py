@@ -4,8 +4,9 @@ import mysql.connector
 from mysql.connector import pooling, cursor
 import logging
 import os
-from models import DropUpdate, DropCreate
+from models import DropUpdate, DropCreate, ExistenceCheckRequest, ExistenceCheckResponse, ExistenceResult
 from typing import Literal
+from services.existence_checker import check_existence
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -133,3 +134,11 @@ async def delete_drop(id: int, request: Request, cursor: cursor.MySQLCursor = De
 
     logger.info(f"Successfully deleted drop record with id: {id}")
     return {"message": "Drop data deleted successfully", "id": id}
+
+@app.post("/api/drops/exist", response_model=ExistenceCheckResponse)
+async def check_drops_exist(
+    request: ExistenceCheckRequest,
+    cursor: cursor.MySQLCursorDict = Depends(get_db_cursor)
+):
+    final_results = check_existence(cursor, request.items)
+    return ExistenceCheckResponse(results=final_results)
