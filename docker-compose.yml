@@ -134,12 +134,15 @@ services:
     working_dir: /app
     command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
-      POSTGRES_HOST: host.docker.internal
-      POSTGRES_PORT: 30631
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LITELLM_HOST: https://litellm.mydormroom.dpdns.org
+      MCP_HOST: https://mcp-context-forge.mydormroom.dpdns.org/servers/1a6556c61e9a400ea537e7e73c05a2db/mcp
+      OPENAI_API_KEY: ${LITELLM_API_KEY}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
+      LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL}
+      MCP_TOKEN: ${MCP_TOKEN}
     ports:
-      - "30104:8000"
+      - "30105:8000"
     networks:
       - network-ms-template
 
