@@ -1,18 +1,16 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    ollama_endpoint: str = "http://host.docker.internal:11434"
+    litellm_host: str = "https://litellm.mydormroom.dpdns.org"
+    mcp_host: str ="https://mcp-context-forge.mydormroom.dpdns.org/servers/1a6556c61e9a400ea537e7e73c05a2db/mcp"
     postgres_user: str = "postgres"
     postgres_password: str = "postgres"
     postgres_host: str = "localhost"
     postgres_port: str = "5432"
     postgres_name: str = "rag"
+    default_chat_model: str = "gemini/gemini-2.5-flash"
+    system_prompt: str = "You are a helpful assistant. Use the following context to answer the user's question."
     
-    default_chat_model: str = "gpt-oss:20b"
-    embedding_model: str = "nomic-embed-text"
-    
-    maplestory_user_name: str = "maplestory"
-
     @property
     def postgres_uri(self) -> str:
         return f"postgres://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_name}"

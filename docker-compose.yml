@@ -138,8 +138,13 @@ services:
       POSTGRES_PORT: 30631
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      OPENAI_API_KEY: ${LITELLM_API_KEY}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
+      LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL}
+      MCP_TOKEN: ${MCP_TOKEN}
     ports:
-      - "30104:8000"
+      - "30105:8000"
     networks:
       - network-ms-template
 
