@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-llm-orchestrator
-          image: yenyinglu/ms-llm-orchestrator:e0c14a6c
+          image: yenyinglu/ms-llm-orchestrator:032c8501
           ports:
             - containerPort: 8000
           env:
@@ -25,7 +25,7 @@ spec:
             - name: LITELLM_HOST
               value: "http://litellm.ai.svc.cluster.local:4000"
             - name: MCP_HOST
-              value: "http://mcp-context-forge:4444/servers/1a6556c61e9a400ea537e7e73c05a2db/mcp"
+              value: "http://mcp-context-forge.ai.svc.cluster.local:4444/servers/1a6556c61e9a400ea537e7e73c05a2db/mcp"
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
