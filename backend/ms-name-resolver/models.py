@@ -19,3 +19,12 @@ class IdWithType(BaseModel):
 
 class ResolveIdsResponse(BaseModel):
     ids: Dict[str, IdWithType]
+
+# --- Pydantic Models for getting all names ---
+class GetAllNamesResponse(BaseModel):
+    names: List[str]
+
+# --- Pydantic Models for name-to-ids endpoint ---
+class NameIdType(BaseModel):
+    type: str
+    id: int

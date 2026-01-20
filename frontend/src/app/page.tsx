@@ -18,6 +18,7 @@ export default function Home() {
     searchHistory,
     handleSearch,
     handleDeleteHistory,
+    alternativeIds,
   } = useSearchData();
 
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function Home() {
       <SearchComponent
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        handleSearch={() => handleSearch()}
+        handleSearch={handleSearch}
         loading={loading}
         searchHistory={searchHistory}
         handleHistoryClick={handleHistoryClick}
@@ -58,6 +59,7 @@ export default function Home() {
         searchResults={searchResults}
         searchTerm={searchTerm}
         handleItemClick={handleItemClick}
+        alternativeIds={alternativeIds}
       />
       <ChatComponent />
     </div>

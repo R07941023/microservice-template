@@ -19,3 +19,11 @@ class IdInfo(BaseModel):
     id: int
     type: Literal["item", "mob"]
 
+class ExistenceInfo(BaseModel):
+    id: int
+    type: Literal["item", "mob"]
+    image_exist: bool
+    drop_exist: bool
+
+class ExistenceResponse(BaseModel):
+    results: List[ExistenceInfo]

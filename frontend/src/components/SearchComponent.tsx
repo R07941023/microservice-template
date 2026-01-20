@@ -1,6 +1,8 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
+import { useClickOutside } from '@/hooks/useClickOutside';
+import { useAutocompleteNames } from '@/hooks/useAutocompleteNames';
 
 const DeleteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -11,12 +13,12 @@ const DeleteIcon = () => (
 interface SearchComponentProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  handleSearch: () => void;
+  handleSearch: (term?: string) => void;
   loading: boolean;
   searchHistory: string[];
   handleHistoryClick: (term: string) => void;
   handleDeleteHistory: (e: React.MouseEvent, term: string) => void;
-  disabled?: boolean; // Add disabled prop
+  disabled?: boolean;
 }
 
 const SearchComponent: React.FC<SearchComponentProps> = ({
@@ -27,28 +29,70 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
   searchHistory,
   handleHistoryClick,
   handleDeleteHistory,
-  disabled = false, // Default to false
+  disabled = false,
 }) => {
+  const allNames = useAutocompleteNames();
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside(searchContainerRef, () => setIsInputFocused(false));
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    if (value) {
+      const filteredSuggestions = allNames
+        .filter(name => name.toLowerCase().includes(value.toLowerCase()))
+        .slice(0, 10);
+      setSuggestions(filteredSuggestions);
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchTerm(suggestion);
+    handleSearch(suggestion); // Trigger search immediately
+    setSuggestions([]);
+    setIsInputFocused(false);
+  };
+
   return (
-    <>
-      <div className="flex mb-1">
+    <div ref={searchContainerRef}>
+      <div className="flex mb-1 relative">
         <input
           type="text"
           placeholder="Search by Dropper ID or Item ID..."
           className="flex-grow p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black disabled:bg-gray-100 disabled:cursor-not-allowed"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleInputChange}
+          onFocus={() => setIsInputFocused(true)}
           onKeyPress={(e) => {
             if (e.key === 'Enter') {
               handleSearch();
+              setIsInputFocused(false);
             }
           }}
-          disabled={disabled} // Apply disabled prop
+          disabled={disabled}
         />
+        {isInputFocused && suggestions.length > 0 && (
+          <ul className="absolute top-full left-0 right-0 z-10 bg-white border border-gray-300 rounded-b-md shadow-lg max-h-60 overflow-y-auto">
+            {suggestions.map((suggestion, index) => (
+              <li
+                key={index}
+                className="p-2 cursor-pointer hover:bg-gray-100 text-black"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                {suggestion}
+              </li>
+            ))}
+          </ul>
+        )}
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          onClick={handleSearch}
-          disabled={loading || disabled} // Apply disabled prop
+          onClick={() => handleSearch()}
+          disabled={loading || disabled}
         >
           {loading ? 'Searching...' : 'Search'}
         </button>
@@ -77,8 +121,9 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 };
 
 export default SearchComponent;
+

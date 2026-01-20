@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
-  const authorizationHeader = request.headers.get('Authorization'); // Get Authorization header
+  const authorizationHeader = request.headers.get('Authorization');
+  const devModeHeader = request.headers.get('X-Dev-Mode'); // Get X-Dev-Mode header
 
   if (!query) {
     return NextResponse.json({ detail: `Query parameter 'query' is required.` }, { status: 400 });
@@ -17,10 +18,21 @@ export async function GET(request: Request) {
       headers['Authorization'] = authorizationHeader;
     }
 
-    // Forward the request to the internal backend service via Kong
-    const backendUrl = `http://kong:8000/search/${query}`
+    let backendUrl: string;
+
+    if (devModeHeader === 'true') {
+      // If dev mode is on, bypass Kong and hit ms-search-aggregator directly for drops-augmented
+      backendUrl = `http://ms-search-aggregator:8000/api/search/drops-augmented?name=${query}`;
+      console.log(`[Dev Mode ON] Routing to ms-search-aggregator: ${backendUrl}`);
+    } else {
+      // Default behavior: forward to Kong
+      backendUrl = `http://kong:8000/search/${query}`;
+      console.log(`[Dev Mode OFF] Routing to Kong: ${backendUrl}`);
+    }
+    
     const backendResponse = await fetch(backendUrl, {
-      headers: headers, // Pass headers to backend fetch
+      method: 'GET', // Explicitly set GET method
+      headers: headers,
       cache: 'no-store',
     });
 

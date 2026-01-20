@@ -37,3 +37,18 @@ async def resolve_ids_to_names(client: httpx.AsyncClient, ids: List[int], id_typ
     except Exception as e:
         logger.error(f"An unexpected error occurred while resolving IDs to names: {e}", exc_info=True)
         raise
+
+async def get_ids_for_name(client: httpx.AsyncClient, name: str) -> List[Dict]:
+    """Gets all ID/type pairs for a given name."""
+    if not name:
+        return []
+    try:
+        response = await client.get(f"{NAME_RESOLVER_URL}/api/name-to-ids/{name}")
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Error getting IDs for name: {e.response.status_code} - {e.response.text}")
+        raise
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while getting IDs for name: {e}", exc_info=True)
+        raise
