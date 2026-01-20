@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: ms-search-aggregator
-        image: yenyinglu/ms-search-aggregator:6c45559e
+        image: yenyinglu/ms-search-aggregator:2a780492
         ports:
         - containerPort: 8000
