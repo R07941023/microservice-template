@@ -37,6 +37,8 @@ app = FastAPI()
 
 # Load environment variables
 MCP_TOKEN = os.getenv("MCP_TOKEN", None)
+MCP_HOST = os.getenv("MCP_HOST", None)
+LITELLM_HOST = os.getenv("LITELLM_HOST", None)
 
 @app.on_event("startup")
 async def startup():
@@ -51,7 +53,7 @@ async def startup():
             {
                 "weather": {
                     "transport": "streamable_http",
-                    "url": settings.mcp_host,
+                    "url": MCP_HOST,
                     "headers": {
                         "Authorization": f"Bearer {MCP_TOKEN}",
                         "Accept": "application/json"
@@ -64,7 +66,7 @@ async def startup():
 
         # 3. Initialize LLM
         llm = ChatOpenAI(
-            openai_api_base=settings.litellm_host,
+            openai_api_base=LITELLM_HOST,
             temperature=0,
             model=settings.default_chat_model,
             streaming=True
