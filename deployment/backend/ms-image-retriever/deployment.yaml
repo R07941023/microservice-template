@@ -5,7 +5,7 @@ metadata:
   labels:
     app: ms-image-retriever
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: ms-image-retriever
@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-image-retriever
-          image: yenyinglu/ms-image-retriever:45c22559
+          image: yenyinglu/ms-image-retriever:e0c14a6c
           ports:
             - containerPort: 8000
           env:

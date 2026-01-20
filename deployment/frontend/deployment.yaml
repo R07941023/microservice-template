@@ -5,7 +5,7 @@ metadata:
   labels:
     app: ms-nextjs-template
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: ms-nextjs-template
@@ -16,6 +16,33 @@ spec:
     spec:
       containers:
         - name: ms-nextjs-template
-          image: yenyinglu/ms-nextjs-service:45c22559
+          image: yenyinglu/ms-nextjs-service:e0c14a6c
           ports:
             - containerPort: 3000
+          resources:
+            requests:
+              cpu: "20m"
+              memory: "512Mi"
+            limits:
+              cpu: "100m"
+              memory: "1Gi"
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ms-nextjs-template-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ms-nextjs-template
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50

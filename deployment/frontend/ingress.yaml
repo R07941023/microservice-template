@@ -1,35 +1,40 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
 metadata:
-  name: microservice-template-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  name: microservice-template-gateway
+  namespace: app
 spec:
-  ingressClassName: nginx
-  tls:
-    - hosts:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 30444
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: mydormroom-tls
+      hosts:
         - microservice-template.mydormroom.com
         - microservice-template.mydormroom.dpdns.org
-      secretName: mydormroom-tls
-  rules:
-    - host: microservice-template.mydormroom.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: ms-nextjs-template
-                port:
-                  number: 80
-    - host: microservice-template.mydormroom.dpdns.org
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: ms-nextjs-template
-                port:
-                  number: 80
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: microservice-template-virtualservice
+  namespace: app
+spec:
+  hosts:
+    - microservice-template.mydormroom.com
+    - microservice-template.mydormroom.dpdns.org
+  gateways:
+    - microservice-template-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: ms-nextjs-template.app.svc.cluster.local
+            port:
+              number: 80

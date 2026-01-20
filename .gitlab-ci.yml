@@ -3,7 +3,7 @@ stages:
   - release
 
 .default-build-image: &default-build-image
-  image: docker:24.0.7
+  image: docker:29.0.4
   retry:
     max: 2
     when:
@@ -135,29 +135,29 @@ create-release-mr:
     - |
       set -e
       apk update && apk add git curl
-      
+
       echo "Updating image tag in deployment files to $IMAGE_TAG"
       find ./deployment -type f -name "deployment.yaml" -exec sed -i "s|image: \(.*\):.*|image: \1:$IMAGE_TAG|g" {} +
-      
+
       echo "Checking for changes..."
       if [ -z "$(git status --porcelain ./deployment)" ]; then
         echo "No changes detected in deployment files. Skipping MR creation."
         exit 0
       fi
-      
+
       echo "Configuring git..."
       git config --global user.email "${GITLAB_USER_EMAIL:-'gitlab-ci@example.com'}"
       git config --global user.name "${GITLAB_USER_NAME:-'GitLab CI'}"
-      
+
       BRANCH_NAME="release/update-tags-${IMAGE_TAG}"
       echo "Creating and switching to new branch: ${BRANCH_NAME}"
       git checkout -b "${BRANCH_NAME}"
       git add ./deployment/
       git commit -m "Gitlab CI: Update image tags to $IMAGE_TAG"
-      
+
       echo "Pushing changes to remote..."
       git push "http://gitlab-ci-token:${GITLAB_API_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" "HEAD:${BRANCH_NAME}"
-      
+
       echo "Creating Merge Request..."
       curl --request POST \
            --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
@@ -170,7 +170,7 @@ create-release-mr:
              "remove_source_branch": true
            }' \
            "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests"
-      
+
       echo "Merge Request created successfully."
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'

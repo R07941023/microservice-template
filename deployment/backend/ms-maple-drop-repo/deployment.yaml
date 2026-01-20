@@ -5,7 +5,7 @@ metadata:
   labels:
     app: ms-maple-drop-repo
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: ms-maple-drop-repo
@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-maple-drop-repo
-          image: yenyinglu/ms-maple-drop-repo:45c22559
+          image: yenyinglu/ms-maple-drop-repo:e0c14a6c
           ports:
             - containerPort: 8000
           env:

@@ -3,6 +3,10 @@ from fastapi.responses import StreamingResponse
 from minio import Minio
 import os
 import logging
+from typing import List
+from models import ImageCheckRequest, ImageCheckResponse, ImageExistence, ImageInfo
+import asyncio
+from services.image_checker import check_single_image # Import the helper function
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -40,3 +44,11 @@ async def get_image(type: str, dropper_id: str):
         # Log the error and return 404 if image not found
         logger.error(f"Error retrieving image '{object_name}': {e}")
         raise HTTPException(status_code=404, detail="Image not found")
+
+@app.post("/api/images/exist", response_model=ImageCheckResponse)
+async def check_images_exist(request: ImageCheckRequest):
+    # Create a list of concurrent tasks
+    tasks = [check_single_image(minio_client, MINIO_BUCKET, image_info) for image_info in request.images]
+    # Run all tasks in parallel
+    results = await asyncio.gather(*tasks)
+    return ImageCheckResponse(results=results)
