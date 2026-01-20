@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-llm-orchestrator
-          image: yenyinglu/ms-llm-orchestrator:e0c14a6c
+          image: yenyinglu/ms-llm-orchestrator:032c8501
           ports:
             - containerPort: 8000
           env:
