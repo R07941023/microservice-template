@@ -21,9 +21,9 @@ spec:
             - containerPort: 8000
           env:
             - name: MYSQL_HOST
-              value: host.docker.internal:10370
+              value: mariadb.infra-net.svc.cluster.local:3306
             - name: MYSQL_USER
-              value: root
+              value: mariadb
             - name: MYSQL_DATABASE
               value: TsmcMapleStoryV113
             - name: MYSQL_PASSWORD
