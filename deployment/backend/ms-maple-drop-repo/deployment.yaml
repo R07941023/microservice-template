@@ -25,7 +25,7 @@ spec:
             - name: MYSQL_USER
               value: mariadb
             - name: MYSQL_DATABASE
-              value: TsmcMapleStoryV113
+              value: TsmcMapleStoryV113Dev
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
