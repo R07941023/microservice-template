@@ -40,9 +40,11 @@ services:
     container_name: ms-maple-drop-repo
     hostname: "ms-maple-drop-repo"
     volumes:
-      - E:\project\microservice_template\backend\ms-maple-drop-repo:/app
-    working_dir: /app
-    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      - E:\project\microservice_template\backend\ms-maple-drop-repo:/app/ms-maple-drop-repo
+      - E:\project\microservice_template\backend\utils:/app/utils
+      - /app/ms-maple-drop-repo/.venv
+    working_dir: /app/ms-maple-drop-repo
+    command: sh -c "uv sync && uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       MYSQL_HOST: host.docker.internal:30632
       MYSQL_USER: mariadb
@@ -56,9 +58,11 @@ services:
     container_name: ms-name-resolver
     hostname: "ms-name-resolver"
     volumes:
-      - E:\project\microservice_template\backend\ms-name-resolver:/app
-    working_dir: /app
-    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      - E:\project\microservice_template\backend\ms-name-resolver:/app/ms-name-resolver
+      - E:\project\microservice_template\backend\utils:/app/utils
+      - /app/ms-name-resolver/.venv
+    working_dir: /app/ms-name-resolver
+    command: sh -c "uv sync && uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       MONGO_URI: "mongodb://host.docker.internal:30370/?directConnection=true"
     networks:
@@ -69,9 +73,11 @@ services:
     container_name: ms-search-aggregator
     hostname: "ms-search-aggregator"
     volumes:
-      - E:\project\microservice_template\backend\ms-search-aggregator:/app
-    working_dir: /app
-    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      - E:\project\microservice_template\backend\ms-search-aggregator:/app/ms-search-aggregator
+      - E:\project\microservice_template\backend\utils:/app/utils
+      - /app/ms-search-aggregator/.venv
+    working_dir: /app/ms-search-aggregator
+    command: sh -c "uv sync && uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     networks:
       - network-ms-template
 
@@ -80,9 +86,11 @@ services:
     container_name: ms-image-retriever
     hostname: "ms-image-retriever"
     volumes:
-      - E:\project\microservice_template\backend\ms-image-retriever:/app
-    working_dir: /app
-    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      - E:\project\microservice_template\backend\ms-image-retriever:/app/ms-image-retriever
+      - E:\project\microservice_template\backend\utils:/app/utils
+      - /app/ms-image-retriever/.venv
+    working_dir: /app/ms-image-retriever
+    command: sh -c "uv sync && uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       MINIO_ENDPOINT: host.docker.internal:30831
       MINIO_BUCKET: maplestory
@@ -96,9 +104,11 @@ services:
     container_name: ms-image-cache
     hostname: "ms-image-cache"
     volumes:
-      - E:\project\microservice_template\backend\ms-image-cache:/app
-    working_dir: /app
-    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      - E:\project\microservice_template\backend\ms-image-cache:/app/ms-image-cache
+      - E:\project\microservice_template\backend\utils:/app/utils
+      - /app/ms-image-cache/.venv
+    working_dir: /app/ms-image-cache
+    command: sh -c "uv sync && uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       REDIS_HOST: host.docker.internal
       REDIS_PORT: 30930
@@ -112,10 +122,11 @@ services:
     container_name: ms-aggregator-cache
     hostname: "ms-aggregator-cache"
     volumes:
-      - E:\project\microservice_template\backend\ms-aggregator-cache:/app
+      - E:\project\microservice_template\backend\ms-aggregator-cache:/app/ms-aggregator-cache
       - E:\project\microservice_template\backend\utils:/app/utils
-    working_dir: /app
-    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      - /app/ms-aggregator-cache/.venv
+    working_dir: /app/ms-aggregator-cache
+    command: sh -c "uv sync && uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       REDIS_HOST: host.docker.internal
       REDIS_PORT: 30930
@@ -129,10 +140,11 @@ services:
     container_name: ms-llm-orchestrator
     hostname: "ms-llm-orchestrator"
     volumes:
-      - E:\project\microservice_template\backend\ms-llm-orchestrator:/app
+      - E:\project\microservice_template\backend\ms-llm-orchestrator:/app/ms-llm-orchestrator
       - E:\project\microservice_template\backend\utils:/app/utils
-    working_dir: /app
-    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      - /app/ms-llm-orchestrator/.venv
+    working_dir: /app/ms-llm-orchestrator
+    command: sh -c "uv sync && uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
       LITELLM_HOST: https://litellm.mydormroom.dpdns.org
       MCP_HOST: https://mcp-context-forge.mydormroom.dpdns.org/servers/1a6556c61e9a400ea537e7e73c05a2db/mcp
