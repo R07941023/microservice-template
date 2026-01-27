@@ -1,6 +1,27 @@
 stages:
+  - test
   - build
   - release
+
+.default-python-test: &default-python-test
+  image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+  tags:
+    - docker
+  before_script:
+    - cd $PROJECT_PATH
+    - uv sync --extra test
+  script:
+    - uv run pytest -v --tb=short
+
+test-ms-maple-drop-repo:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-maple-drop-repo
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - backend/ms-maple-drop-repo/**/*
 
 .default-build-image: &default-build-image
   image: docker:29.0.4
@@ -38,6 +59,9 @@ build-nextjs-service:
 build-ms-maple-drop-repo-service:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-maple-drop-repo
+      optional: true
   variables:
     IMAGE_NAME: ms-maple-drop-repo
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
