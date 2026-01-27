@@ -23,6 +23,66 @@ test-ms-maple-drop-repo:
       changes:
         - backend/ms-maple-drop-repo/**/*
 
+test-ms-aggregator-cache:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-aggregator-cache
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - backend/ms-aggregator-cache/**/*
+
+test-ms-image-cache:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-image-cache
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - backend/ms-image-cache/**/*
+
+test-ms-image-retriever:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-image-retriever
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - backend/ms-image-retriever/**/*
+
+test-ms-name-resolver:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-name-resolver
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - backend/ms-name-resolver/**/*
+
+test-ms-search-aggregator:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-search-aggregator
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - backend/ms-search-aggregator/**/*
+
+test-ms-llm-orchestrator:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-llm-orchestrator
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - backend/ms-llm-orchestrator/**/*
+
 .default-build-image: &default-build-image
   image: docker:29.0.4
   retry:
@@ -36,7 +96,7 @@ test-ms-maple-drop-repo:
   before_script:
     - docker info
   script:
-    - echo "Build $IMAGE_NAME Docker image with root context"                                                                                                                │
+    - echo "Build $IMAGE_NAME Docker image with root context"
     - docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG -f $DOCKERFILE_PATH/Dockerfile .
     - echo "Login to Docker Hub"
     - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
@@ -75,6 +135,9 @@ build-ms-maple-drop-repo-service:
 build-ms-name-resolver-service:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-name-resolver
+      optional: true
   variables:
     IMAGE_NAME: ms-name-resolver
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
@@ -88,6 +151,9 @@ build-ms-name-resolver-service:
 build-ms-search-aggregator:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-search-aggregator
+      optional: true
   variables:
     IMAGE_NAME: ms-search-aggregator
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
@@ -101,6 +167,9 @@ build-ms-search-aggregator:
 build-ms-image-retriever:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-image-retriever
+      optional: true
   variables:
     IMAGE_NAME: ms-image-retriever
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
@@ -114,6 +183,9 @@ build-ms-image-retriever:
 build-ms-image-cache:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-image-cache
+      optional: true
   variables:
     IMAGE_NAME: ms-image-cache
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
@@ -127,6 +199,9 @@ build-ms-image-cache:
 build-ms-aggregator-cache:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-aggregator-cache
+      optional: true
   variables:
     IMAGE_NAME: ms-aggregator-cache
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
@@ -140,6 +215,9 @@ build-ms-aggregator-cache:
 build-ms-llm-orchestrator:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-llm-orchestrator
+      optional: true
   variables:
     IMAGE_NAME: ms-llm-orchestrator
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
