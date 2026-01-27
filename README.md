@@ -143,7 +143,12 @@ This project uses Kong as its API Gateway, serving as the main entry point for b
 The `deployment/` directory contains Kubernetes manifests for all services, managed with Kustomize. The `.gitlab-ci.yml` file defines a CI/CD pipeline for automatically building Docker images and pushing them to the `main` branch.
 
 ### Testing
+**nextjs**:
+```bash
+npm run test:run
+```
 **python**:
 ```bash
 uv sync --extra test && uv run pytest -v
 ```
+

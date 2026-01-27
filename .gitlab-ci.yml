@@ -83,6 +83,31 @@ test-ms-llm-orchestrator:
       changes:
         - backend/ms-llm-orchestrator/**/*
 
+test-frontend:
+  image: node:22-slim
+  stage: test
+  tags:
+    - docker
+  variables:
+    PROJECT_PATH: ./frontend
+  before_script:
+    - cd $PROJECT_PATH
+    - npm ci
+  script:
+    - npm run test:ci
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    when: always
+    reports:
+      junit: frontend/test-results/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: frontend/coverage/cobertura-coverage.xml
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - frontend/**/*
+
 .default-build-image: &default-build-image
   image: docker:29.0.4
   retry:
@@ -106,6 +131,9 @@ test-ms-llm-orchestrator:
 build-nextjs-service:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-frontend
+      optional: true
   variables:
     IMAGE_NAME: ms-nextjs-service
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
