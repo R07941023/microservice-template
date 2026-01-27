@@ -6,3 +6,4 @@ __pycache__/
 .venv/
 __init__.py
 .coverage
+utils.egg-info
