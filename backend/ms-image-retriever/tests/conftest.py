@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 import sys
 import os
 
@@ -21,13 +21,13 @@ def client(mock_minio_client):
         "MINIO_ENDPOINT": "localhost:9000",
         "MINIO_ROOT_USER": "test_user",
         "MINIO_ROOT_PASSWORD": "test_password",
-        "MINIO_BUCKET": "test_bucket"
+        "MINIO_BUCKET": "test_bucket",
+        "CACHE_ENABLED": "false",
     }):
-        with patch("minio.Minio", return_value=mock_minio_client):
-            with patch("main.minio_client", mock_minio_client):
-                from main import app
-                with TestClient(app) as test_client:
-                    yield test_client
+        with patch("services.minio_service.minio_client", mock_minio_client):
+            from main import app
+            with TestClient(app) as test_client:
+                yield test_client
 
 
 @pytest.fixture

@@ -130,12 +130,12 @@ async def check_images_exist(request: ImageCheckRequest) -> ImageCheckResponse:
     """
     async def check_single(image_info: ImageInfo) -> ImageExistence:
         """Check single image existence."""
-        object_name = f"{image_info.type}/{image_info.dropper_id}.png"
+        object_name = f"{image_info.type}/{image_info.id}.png"
         exists = await minio_service.check_object_exists(MINIO_BUCKET, object_name)
         return ImageExistence(
-            dropper_id=image_info.dropper_id,
+            id=image_info.id,
             type=image_info.type,
-            exists=exists
+            image_exist=exists
         )
 
     tasks = [check_single(image_info) for image_info in request.images]
