@@ -149,6 +149,6 @@ npm run test:run
 ```
 **python**:
 ```bash
-uv sync --extra test && uv run pytest -v
+uv sync --extra test && uv run pytest -v --cov=. --cov-report=term-missing
 ```
 
