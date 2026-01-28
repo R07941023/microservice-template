@@ -6,6 +6,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "pymongo",
+    "utils",
 ]
 requires-python = ">=3.11"
 
@@ -23,5 +24,8 @@ python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
 asyncio_mode = "auto"
+
+[tool.uv.sources]
+utils = { path = "../utils", editable = true }
 
 [tool.uv]

@@ -7,6 +7,7 @@ dependencies = [
     "uvicorn",
     "mysql-connector-python",
     "httpx",
+    "utils",
 ]
 requires-python = ">=3.11"
 
@@ -32,5 +33,8 @@ exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.:",
 ]
+
+[tool.uv.sources]
+utils = { path = "../utils", editable = true }
 
 [tool.uv]

@@ -1,18 +1,22 @@
-from fastapi import FastAPI, HTTPException, Request, Depends, Query, Path
-from typing import Optional
-import mysql.connector
-from mysql.connector import pooling, cursor
+"""Maple drop repository microservice for MySQL drop data operations."""
+
 import logging
 import os
-from models import DropUpdate, DropCreate, ExistenceCheckRequest, ExistenceCheckResponse, ExistenceResult
 from typing import Literal
-from services.existence_checker import check_existence
 
-# Configure logging
+import mysql.connector
+from fastapi import FastAPI, HTTPException, Request, Depends, Query, Path
+from mysql.connector import pooling, cursor
+
+from models import DropUpdate, DropCreate, ExistenceCheckRequest, ExistenceCheckResponse
+from services.existence_checker import check_existence
+from utils.health import router as health_router
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+app.include_router(health_router)
 
 # --- Database Configuration ---
 DB_HOST_PORT = os.getenv("MYSQL_HOST", "db:3306")
@@ -138,7 +142,47 @@ async def delete_drop(id: int, request: Request, cursor: cursor.MySQLCursor = De
 @app.post("/api/drops/exist", response_model=ExistenceCheckResponse)
 async def check_drops_exist(
     request: ExistenceCheckRequest,
-    cursor: cursor.MySQLCursorDict = Depends(get_db_cursor)
+    db_cursor: cursor.MySQLCursorDict = Depends(get_db_cursor)
 ):
-    final_results = check_existence(cursor, request.items)
+    """
+    Check if drops exist in the database.
+
+    Args:
+        request: Request containing items to check.
+        db_cursor: Database cursor dependency.
+
+    Returns:
+        Response with existence check results.
+    """
+    final_results = check_existence(db_cursor, request.items)
     return ExistenceCheckResponse(results=final_results)
+
+
+@app.get("/health/ready")
+async def readiness() -> dict:
+    """
+    Readiness probe endpoint.
+
+    Checks if MySQL dependency is available.
+
+    Returns:
+        Status dict with dependency states.
+
+    Raises:
+        HTTPException: 503 if MySQL is unavailable.
+    """
+    cnx = None
+    try:
+        cnx = cnxpool.get_connection()
+        cnx.ping(reconnect=True)
+    except mysql.connector.Error as e:
+        logger.error("MySQL health check failed: %s", e)
+        raise HTTPException(status_code=503, detail="MySQL unavailable") from e
+    finally:
+        if cnx and cnx.is_connected():
+            cnx.close()
+
+    return {
+        "status": "ready",
+        "mysql": "connected",
+    }

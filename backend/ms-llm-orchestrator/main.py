@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -14,6 +15,10 @@ from langfuse.langchain import CallbackHandler
 from config import settings
 from models import ChatRequest, User
 from utils.auth import verify_jwt_from_header
+from utils.health import router as health_router
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class AppState:
@@ -22,24 +27,23 @@ class AppState:
     langchain_agent: object = None
     langfuse_handler: CallbackHandler = None
 
+
 app_state = AppState()
 
-# --- Logging ---
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# --- App Initialization ---
-
-app = FastAPI()
-
-
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """
-    Initialize application resources on startup.
+    Manage application lifespan.
 
-    Sets up Langfuse handler, MCP client with tools, and LangChain agent.
+    Sets up Langfuse handler, MCP client with tools, and LangChain agent on startup.
+    Cleans up resources on shutdown.
+
+    Args:
+        app: FastAPI application instance.
+
+    Yields:
+        None after successful initialization.
 
     Raises:
         Exception: If any initialization step fails.
@@ -83,6 +87,16 @@ async def startup():
     except Exception as e:
         logger.error("Failed during startup: %s", e, exc_info=True)
         raise
+
+    yield
+
+    # Shutdown
+    logger.info("Shutting down application...")
+
+
+app = FastAPI(lifespan=lifespan)
+app.include_router(health_router)
+
 
 async def get_current_user(authorization: str | None = Header(default=None)) -> User:
     """
@@ -179,3 +193,25 @@ async def stream_chat(
         generator,
         media_type="text/event-stream"
     )
+
+
+@app.get("/health/ready")
+async def readiness() -> dict:
+    """
+    Readiness probe endpoint.
+
+    Checks if LangChain agent is initialized.
+
+    Returns:
+        Status dict with dependency states.
+
+    Raises:
+        HTTPException: 503 if agent is not initialized.
+    """
+    if not app_state.langchain_agent:
+        raise HTTPException(status_code=503, detail="Agent not initialized")
+
+    return {
+        "status": "ready",
+        "agent": "initialized",
+    }

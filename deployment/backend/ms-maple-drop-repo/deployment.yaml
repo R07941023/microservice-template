@@ -31,5 +31,19 @@ spec:
                 secretKeyRef:
                   name: keyvault
                   key: MS-MAPLE-DROP-REPO-MYSQL_PASSWORD
-                  
-            
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
