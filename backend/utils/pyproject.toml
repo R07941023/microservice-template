@@ -3,7 +3,7 @@ name = "utils"
 version = "0.1.0"
 description = "Shared utilities for microservices."
 dependencies = [
-    "pyjwt",
+    "pyjwt[crypto]",
     "redis>=5.0.0",
     "fastapi",
 ]

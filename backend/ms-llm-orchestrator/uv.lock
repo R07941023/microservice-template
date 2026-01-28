@@ -1914,14 +1914,14 @@ version = "0.1.0"
 source = { editable = "../utils" }
 dependencies = [
     { name = "fastapi" },
-    { name = "pyjwt" },
+    { name = "pyjwt", extra = ["crypto"] },
     { name = "redis" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "fastapi" },
-    { name = "pyjwt" },
+    { name = "pyjwt", extras = ["crypto"] },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0.0" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.1.0" },
     { name = "redis", specifier = ">=5.0.0" },
