@@ -4,11 +4,14 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir uv
 
+# Copy utils first (to ../utils relative to /app)
+COPY backend/utils/ /utils/
+
+# Copy dependency files and sync
 COPY backend/ms-search-aggregator/pyproject.toml backend/ms-search-aggregator/uv.lock* ./
 RUN uv sync --no-dev --frozen
 
 COPY backend/ms-search-aggregator/ ./
-COPY backend/utils/ ./utils/
 
 EXPOSE 8000
 
