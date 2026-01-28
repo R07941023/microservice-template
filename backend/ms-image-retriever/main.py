@@ -7,16 +7,14 @@ from contextlib import asynccontextmanager
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Response
 from minio.error import S3Error
 
-from config import (
-    MINIO_BUCKET,
+from config import MINIO_BUCKET, MINIO_ENDPOINT, THREAD_POOL_SIZE
+from utils.config import (
     REDIS_HOST,
     REDIS_PORT,
     REDIS_DB,
     REDIS_PASSWORD,
     REDIS_CACHE_TTL,
     CACHE_ENABLED,
-    MINIO_ENDPOINT,
-    THREAD_POOL_SIZE,
 )
 from models import ImageCheckRequest, ImageCheckResponse, ImageInfo, ImageExistence
 from services import minio_service
