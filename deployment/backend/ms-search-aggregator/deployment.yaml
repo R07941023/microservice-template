@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ms-search-aggregator
+  labels:
+    app: ms-search-aggregator
 spec:
   replicas: 1
   selector:
@@ -17,3 +19,33 @@ spec:
         image: yenyinglu/ms-search-aggregator:9669811d
         ports:
         - containerPort: 8000
+        env:
+          - name: REDIS_HOST
+            value: "redis-nodeport.infra-net.svc.cluster.local"
+          - name: REDIS_PORT
+            value: "6379"
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: keyvault
+                key: REDIS_PASSWORD
+          - name: REDIS_CACHE_EXPIRATION_SECONDS
+            value: "3600"
+          - name: CACHE_ENABLED
+            value: "true"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3

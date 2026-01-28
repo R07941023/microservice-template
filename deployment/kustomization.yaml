@@ -12,15 +12,12 @@ resources:
   - backend/ms-maple-drop-repo/deployment.yaml
   - backend/ms-maple-drop-repo/service.yaml
 
-  - backend//ms-name-resolver/deployment.yaml
-  - backend//ms-name-resolver/service.yaml
+  - backend/ms-name-resolver/deployment.yaml
+  - backend/ms-name-resolver/service.yaml
 
   - backend/ms-image-retriever/deployment.yaml
   - backend/ms-image-retriever/service.yaml
 
-
-  - backend/ms-aggregator-cache/deployment.yaml
-  - backend/ms-aggregator-cache/service.yaml
 
   - backend/ms-llm-orchestrator/deployment.yaml
   - backend/ms-llm-orchestrator/service.yaml

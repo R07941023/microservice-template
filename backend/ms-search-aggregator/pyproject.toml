@@ -1,15 +1,13 @@
 [project]
 name = "ms-search-aggregator"
 version = "0.1.0"
-description = ""
-authors = [
-    {name = "", email = ""}
-]
+description = "Search aggregator microservice with caching"
 dependencies = [
     "fastapi",
     "uvicorn",
     "pydantic",
-    "httpx"
+    "httpx",
+    "utils",
 ]
 requires-python = ">=3.11"
 
@@ -28,4 +26,5 @@ python_functions = ["test_*"]
 addopts = "-v --tb=short"
 asyncio_mode = "auto"
 
-[tool.uv]
+[tool.uv.sources]
+utils = { path = "../utils", editable = true }

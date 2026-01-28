@@ -19,8 +19,8 @@ consumers:
     secret: 4Z1wWut3SoLKoXKbVWn8IEnfnJjcMV8t
   username: mydormroom
 services:
-- name: aggregator-cache-service
-  host: ms-aggregator-cache
+- name: search-aggregator-service
+  host: ms-search-aggregator
   port: 8000
   protocol: http
   connect_timeout: 60000
@@ -29,7 +29,7 @@ services:
   retries: 5
   enabled: true
   routes:
-  - name: aggregator-cache-route
+  - name: search-aggregator-route
     paths:
     - /search
     path_handling: v1
