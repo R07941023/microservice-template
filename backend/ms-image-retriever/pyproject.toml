@@ -6,6 +6,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "minio",
+    "utils",
 ]
 requires-python = ">=3.11"
 
@@ -16,6 +17,9 @@ test = [
     "pytest-asyncio>=0.23.0",
     "httpx>=0.27.0",
 ]
+
+[tool.uv.sources]
+utils = { path = "../utils", editable = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

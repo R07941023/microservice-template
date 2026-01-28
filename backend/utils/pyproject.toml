@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Shared utilities for microservices."
 dependencies = [
     "pyjwt",
+    "redis>=5.0.0",
+    "fastapi",
 ]
 requires-python = ">=3.11"
 

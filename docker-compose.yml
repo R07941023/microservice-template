@@ -96,24 +96,12 @@ services:
       MINIO_BUCKET: maplestory
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    networks:
-      - network-ms-template
-
-  ms-image-cache:
-    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
-    container_name: ms-image-cache
-    hostname: "ms-image-cache"
-    volumes:
-      - E:\project\microservice_template\backend\ms-image-cache:/app/ms-image-cache
-      - E:\project\microservice_template\backend\utils:/app/utils
-      - /app/ms-image-cache/.venv
-    working_dir: /app/ms-image-cache
-    command: sh -c "uv sync && uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
-    environment:
+      MINIO_THREAD_POOL_SIZE: 20
       REDIS_HOST: host.docker.internal
       REDIS_PORT: 30930
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_CACHE_EXPIRATION_SECONDS: 3600
+      CACHE_ENABLED: "true"
     networks:
       - network-ms-template
 

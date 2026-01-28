@@ -33,16 +33,6 @@ test-ms-aggregator-cache:
       changes:
         - backend/ms-aggregator-cache/**/*
 
-test-ms-image-cache:
-  <<: *default-python-test
-  stage: test
-  variables:
-    PROJECT_PATH: ./backend/ms-image-cache
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-      changes:
-        - backend/ms-image-cache/**/*
-
 test-ms-image-retriever:
   <<: *default-python-test
   stage: test
@@ -202,22 +192,6 @@ build-ms-image-retriever:
     IMAGE_NAME: ms-image-retriever
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
     DOCKERFILE_PATH: ./backend/ms-image-retriever
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-
-build-ms-image-cache:
-  <<: *default-build-image
-  stage: build
-  needs:
-    - job: test-ms-image-cache
-      optional: true
-  variables:
-    IMAGE_NAME: ms-image-cache
-    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
-    DOCKERFILE_PATH: ./backend/ms-image-cache
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
