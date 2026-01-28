@@ -18,50 +18,30 @@ test-ms-maple-drop-repo:
   stage: test
   variables:
     PROJECT_PATH: ./backend/ms-maple-drop-repo
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-      changes:
-        - backend/ms-maple-drop-repo/**/*
 
 test-ms-image-retriever:
   <<: *default-python-test
   stage: test
   variables:
     PROJECT_PATH: ./backend/ms-image-retriever
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-      changes:
-        - backend/ms-image-retriever/**/*
 
 test-ms-name-resolver:
   <<: *default-python-test
   stage: test
   variables:
     PROJECT_PATH: ./backend/ms-name-resolver
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-      changes:
-        - backend/ms-name-resolver/**/*
 
 test-ms-search-aggregator:
   <<: *default-python-test
   stage: test
   variables:
     PROJECT_PATH: ./backend/ms-search-aggregator
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-      changes:
-        - backend/ms-search-aggregator/**/*
 
 test-ms-llm-orchestrator:
   <<: *default-python-test
   stage: test
   variables:
     PROJECT_PATH: ./backend/ms-llm-orchestrator
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-      changes:
-        - backend/ms-llm-orchestrator/**/*
 
 test-frontend:
   image: node:22-slim
