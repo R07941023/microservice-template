@@ -3,6 +3,5 @@ frontend/.next
 __pycache__/
 .env
 .venv/
-__init__.py
 .coverage
 utils.egg-info
