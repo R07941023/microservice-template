@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { NextResponse } from 'next/server';
 
 // These tests use manual fetch mocking (not MSW) since they test internal API routes
 // that make external requests. We mock fetch directly to control backend responses.

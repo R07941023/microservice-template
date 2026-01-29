@@ -54,6 +54,7 @@ test-frontend:
     - cd $PROJECT_PATH
     - npm ci
   script:
+    - npm run build
     - npm run test:ci
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
