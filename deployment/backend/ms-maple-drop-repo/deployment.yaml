@@ -31,6 +31,8 @@ spec:
                 secretKeyRef:
                   name: keyvault
                   key: MS-MAPLE-DROP-REPO-MYSQL_PASSWORD
+            - name: KEYCLOAK_REALM_URL
+              value: "https://keycloak.mydormroom.dpdns.org/realms/master"
           livenessProbe:
             httpGet:
               path: /health/live

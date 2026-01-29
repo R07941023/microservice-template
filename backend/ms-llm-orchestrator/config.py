@@ -20,18 +20,6 @@ class Settings(BaseSettings):
     mcp_host: Optional[str] = None
     litellm_host: Optional[str] = None
 
-    # Keycloak JWT settings
-    keycloak_realm_url: str = "https://keycloak.mydormroom.dpdns.org/realms/master"
-    keycloak_jwks_url: Optional[str] = None  # Auto-generated if not set
-    jwt_audience: Optional[str] = None  # Optional audience validation
-
-    @property
-    def jwks_url(self) -> str:
-        """Get JWKS URL, defaulting to Keycloak's standard endpoint."""
-        if self.keycloak_jwks_url:
-            return self.keycloak_jwks_url
-        return f"{self.keycloak_realm_url}/protocol/openid-connect/certs"
-
     class Config:
         """Pydantic settings configuration."""
 

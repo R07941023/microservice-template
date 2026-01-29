@@ -6,10 +6,114 @@ from unittest.mock import MagicMock, patch
 
 import jwt
 import pytest
+from fastapi import HTTPException
 
+# Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from auth import get_jwks_client, verify_keycloak_token, verify_jwt_from_header, _jwks_clients
+# Mock config before importing auth
+with patch.dict('sys.modules', {
+    'utils.config': MagicMock(
+        KEYCLOAK_REALM_URL="https://keycloak.example.com/realms/test",
+        JWT_AUDIENCE=None,
+        get_jwks_url=lambda: "https://keycloak.example.com/realms/test/protocol/openid-connect/certs"
+    )
+}):
+    # Also need to mock the relative import
+    import importlib
+    import utils.auth
+    importlib.reload(utils.auth)
+    from utils.auth import (
+        User,
+        get_current_user,
+        get_jwks_client,
+        verify_keycloak_token,
+        verify_jwt_from_header,
+        _jwks_clients,
+    )
+
+
+class TestUserModel:
+    """Tests for User model."""
+
+    def test_user_with_all_fields(self):
+        """Test creating User with all fields."""
+        user = User(name="John Doe", email="john@example.com")
+        assert user.name == "John Doe"
+        assert user.email == "john@example.com"
+
+    def test_user_with_optional_fields(self):
+        """Test creating User with optional fields as None."""
+        user = User()
+        assert user.name is None
+        assert user.email is None
+
+    def test_user_with_partial_fields(self):
+        """Test creating User with only name."""
+        user = User(name="Jane")
+        assert user.name == "Jane"
+        assert user.email is None
+
+
+class TestGetCurrentUser:
+    """Tests for get_current_user dependency."""
+
+    @pytest.mark.asyncio
+    async def test_valid_token_returns_user(self):
+        """Test that valid token returns User object."""
+        token_data = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "preferred_username": "testuser",
+        }
+
+        with patch("utils.auth.verify_jwt_from_header") as mock_verify:
+            mock_verify.return_value = token_data
+
+            user = await get_current_user("Bearer valid.token")
+
+            assert isinstance(user, User)
+            assert user.name == "Test User"
+            assert user.email == "test@example.com"
+
+    @pytest.mark.asyncio
+    async def test_valid_token_uses_preferred_username_fallback(self):
+        """Test that preferred_username is used when name is missing."""
+        token_data = {
+            "preferred_username": "testuser",
+            "email": "test@example.com",
+        }
+
+        with patch("utils.auth.verify_jwt_from_header") as mock_verify:
+            mock_verify.return_value = token_data
+
+            user = await get_current_user("Bearer valid.token")
+
+            assert user.name == "testuser"
+            assert user.email == "test@example.com"
+
+    @pytest.mark.asyncio
+    async def test_invalid_token_raises_401(self):
+        """Test that invalid token raises HTTPException 401."""
+        with patch("utils.auth.verify_jwt_from_header") as mock_verify:
+            mock_verify.return_value = None
+
+            with pytest.raises(HTTPException) as exc_info:
+                await get_current_user("Bearer invalid.token")
+
+            assert exc_info.value.status_code == 401
+            assert exc_info.value.detail == "Invalid or missing token"
+
+    @pytest.mark.asyncio
+    async def test_missing_token_raises_401(self):
+        """Test that missing token raises HTTPException 401."""
+        with patch("utils.auth.verify_jwt_from_header") as mock_verify:
+            mock_verify.return_value = None
+
+            with pytest.raises(HTTPException) as exc_info:
+                await get_current_user(None)
+
+            assert exc_info.value.status_code == 401
 
 
 class TestGetJwksClient:
@@ -23,7 +127,7 @@ class TestGetJwksClient:
         """Test creating a new JWKS client."""
         jwks_url = "https://keycloak.example.com/realms/test/protocol/openid-connect/certs"
 
-        with patch("auth.PyJWKClient") as mock_client_class:
+        with patch("utils.auth.PyJWKClient") as mock_client_class:
             mock_instance = MagicMock()
             mock_client_class.return_value = mock_instance
 
@@ -39,7 +143,7 @@ class TestGetJwksClient:
         """Test that the same client is returned for the same URL."""
         jwks_url = "https://keycloak.example.com/realms/test/protocol/openid-connect/certs"
 
-        with patch("auth.PyJWKClient") as mock_client_class:
+        with patch("utils.auth.PyJWKClient") as mock_client_class:
             mock_instance = MagicMock()
             mock_client_class.return_value = mock_instance
 
@@ -54,7 +158,7 @@ class TestGetJwksClient:
         url1 = "https://keycloak1.example.com/certs"
         url2 = "https://keycloak2.example.com/certs"
 
-        with patch("auth.PyJWKClient") as mock_client_class:
+        with patch("utils.auth.PyJWKClient") as mock_client_class:
             mock_instance1 = MagicMock()
             mock_instance2 = MagicMock()
             mock_client_class.side_effect = [mock_instance1, mock_instance2]
@@ -80,8 +184,8 @@ class TestVerifyKeycloakToken:
         issuer = "https://keycloak.example.com/realms/test"
         expected_payload = {"sub": "user123", "preferred_username": "testuser"}
 
-        with patch("auth.get_jwks_client") as mock_get_client, \
-             patch("auth.jwt.decode") as mock_decode:
+        with patch("utils.auth.get_jwks_client") as mock_get_client, \
+             patch("utils.auth.jwt.decode") as mock_decode:
             mock_jwks_client = MagicMock()
             mock_signing_key = MagicMock()
             mock_signing_key.key = "test-key"
@@ -103,8 +207,8 @@ class TestVerifyKeycloakToken:
         audience = "my-client"
         expected_payload = {"sub": "user123", "aud": "my-client"}
 
-        with patch("auth.get_jwks_client") as mock_get_client, \
-             patch("auth.jwt.decode") as mock_decode:
+        with patch("utils.auth.get_jwks_client") as mock_get_client, \
+             patch("utils.auth.jwt.decode") as mock_decode:
             mock_jwks_client = MagicMock()
             mock_signing_key = MagicMock()
             mock_signing_key.key = "test-key"
@@ -135,7 +239,7 @@ class TestVerifyJwtFromHeader:
         issuer = "https://keycloak.example.com/realms/test"
         expected_payload = {"sub": "user123"}
 
-        with patch("auth.verify_keycloak_token") as mock_verify:
+        with patch("utils.auth.verify_keycloak_token") as mock_verify:
             mock_verify.return_value = expected_payload
 
             result = verify_jwt_from_header(authorization, jwks_url, issuer)
@@ -171,7 +275,7 @@ class TestVerifyJwtFromHeader:
         jwks_url = "https://keycloak.example.com/certs"
         issuer = "https://keycloak.example.com/realms/test"
 
-        with patch("auth.verify_keycloak_token") as mock_verify:
+        with patch("utils.auth.verify_keycloak_token") as mock_verify:
             mock_verify.side_effect = jwt.ExpiredSignatureError("Token expired")
 
             result = verify_jwt_from_header(authorization, jwks_url, issuer)
@@ -184,7 +288,7 @@ class TestVerifyJwtFromHeader:
         jwks_url = "https://keycloak.example.com/certs"
         issuer = "https://keycloak.example.com/realms/test"
 
-        with patch("auth.verify_keycloak_token") as mock_verify:
+        with patch("utils.auth.verify_keycloak_token") as mock_verify:
             mock_verify.side_effect = jwt.InvalidIssuerError("Invalid issuer")
 
             result = verify_jwt_from_header(authorization, jwks_url, issuer)
@@ -198,7 +302,7 @@ class TestVerifyJwtFromHeader:
         issuer = "https://keycloak.example.com/realms/test"
         audience = "expected-client"
 
-        with patch("auth.verify_keycloak_token") as mock_verify:
+        with patch("utils.auth.verify_keycloak_token") as mock_verify:
             mock_verify.side_effect = jwt.InvalidAudienceError("Invalid audience")
 
             result = verify_jwt_from_header(authorization, jwks_url, issuer, audience)
@@ -211,7 +315,7 @@ class TestVerifyJwtFromHeader:
         jwks_url = "https://keycloak.example.com/certs"
         issuer = "https://keycloak.example.com/realms/test"
 
-        with patch("auth.verify_keycloak_token") as mock_verify:
+        with patch("utils.auth.verify_keycloak_token") as mock_verify:
             mock_verify.side_effect = jwt.PyJWTError("Some JWT error")
 
             result = verify_jwt_from_header(authorization, jwks_url, issuer)

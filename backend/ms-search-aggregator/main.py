@@ -5,7 +5,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Path
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Path, Header, Depends
 
 from utils.config import (
     REDIS_HOST,
@@ -17,10 +17,10 @@ from utils.config import (
 )
 from models import AugmentedSearchResponse, ExistenceResponse
 from services.search_orchestrator import search_and_augment_drops, aggregate_existence_by_name
+from utils.auth import User, get_current_user
 from utils.cache import CacheClient
 from utils.health import router as health_router
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -65,17 +65,18 @@ app.include_router(health_router)
 @app.get("/search/{name}")
 async def search_with_cache(
     name: str,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    authorization: str = Header(...),
+    user: User = Depends(get_current_user),
 ) -> dict:
     """
     Search for drops with Redis caching.
 
-    This is the main entry point for search queries.
-    Checks cache first, falls back to aggregation if not cached.
-
     Args:
         name: Name of the mob to search for.
         background_tasks: FastAPI background tasks for async caching.
+        authorization: JWT authorization header for downstream calls.
+        user: Current authenticated user.
 
     Returns:
         Aggregated search response with drop data.
@@ -83,6 +84,8 @@ async def search_with_cache(
     Raises:
         HTTPException: 500 if an internal error occurs.
     """
+    logger.info("User %s searching for: %s", user.name, name)
+
     cache: CacheClient | None = app.state.cache
     cache_key = name
 
@@ -90,13 +93,14 @@ async def search_with_cache(
     if cache and cache.is_connected:
         cached_data = await cache.get(cache_key)
         if cached_data:
-            logger.info("Cache hit for %s", name)
+            logger.info("Cache hit for %s (user: %s)", name, user.name)
             return json.loads(cached_data.decode("utf-8"))
 
-    logger.info("Cache miss for %s, fetching from aggregator", name)
+    logger.info("Cache miss for %s, fetching from aggregator (user: %s)", name, user.name)
 
-    # 2. Fetch and aggregate data
-    async with httpx.AsyncClient() as client:
+    # 2. Fetch and aggregate data (pass authorization to downstream services)
+    headers = {"Authorization": authorization}
+    async with httpx.AsyncClient(headers=headers) as client:
         try:
             augmented_drops = await search_and_augment_drops(client, name)
             response_data = AugmentedSearchResponse(data=augmented_drops)
@@ -109,13 +113,13 @@ async def search_with_cache(
 
             return result
         except httpx.HTTPStatusError as e:
-            logger.error("HTTP error during search: %s", e)
+            logger.error("HTTP error during search for user %s: %s", user.name, e)
             raise HTTPException(
                 status_code=e.response.status_code,
                 detail=e.response.text
             ) from e
         except httpx.RequestError as e:
-            logger.error("Request error during search: %s", e)
+            logger.error("Request error during search for user %s: %s", user.name, e)
             raise HTTPException(
                 status_code=500,
                 detail="Error connecting to downstream service"
@@ -124,16 +128,17 @@ async def search_with_cache(
 
 @app.get("/api/search/drops-augmented", response_model=AugmentedSearchResponse)
 async def search_drops_augmented(
-    name: str = Query(..., description="Name of the mob to search for.")
+    name: str = Query(..., description="Name of the mob to search for."),
+    authorization: str = Header(...),
+    user: User = Depends(get_current_user),
 ) -> AugmentedSearchResponse:
     """
     Search for augmented drop data (internal API, no caching).
 
-    This endpoint is kept for backwards compatibility.
-    For cached searches, use /search/{name} instead.
-
     Args:
         name: Name of the mob to search for.
+        authorization: JWT authorization header for downstream calls.
+        user: Current authenticated user.
 
     Returns:
         Augmented search response with drop data.
@@ -141,17 +146,21 @@ async def search_drops_augmented(
     Raises:
         HTTPException: On HTTP errors or internal errors.
     """
-    async with httpx.AsyncClient() as client:
+    logger.info("User %s requesting drops-augmented for: %s", user.name, name)
+
+    headers = {"Authorization": authorization}
+    async with httpx.AsyncClient(headers=headers) as client:
         try:
             augmented_drops = await search_and_augment_drops(client, name)
             return AugmentedSearchResponse(data=augmented_drops)
         except httpx.HTTPStatusError as e:
+            logger.error("HTTP error for user %s: %s", user.name, e)
             raise HTTPException(
                 status_code=e.response.status_code,
                 detail=e.response.text
             ) from e
         except httpx.RequestError as e:
-            logger.error("Request error in drops-augmented: %s", e)
+            logger.error("Request error for user %s: %s", user.name, e)
             raise HTTPException(
                 status_code=500,
                 detail="An internal server error occurred."
@@ -160,13 +169,17 @@ async def search_drops_augmented(
 
 @app.get("/api/existence-check/{name}", response_model=ExistenceResponse)
 async def get_existence_check(
-    name: str = Path(..., description="Name of the mob or item to check existence for.")
+    name: str = Path(..., description="Name of the mob or item to check existence for."),
+    authorization: str = Header(...),
+    user: User = Depends(get_current_user),
 ) -> ExistenceResponse:
     """
     Check existence of images and database entries for a given name.
 
     Args:
         name: Name of the mob or item to check.
+        authorization: JWT authorization header for downstream calls.
+        user: Current authenticated user.
 
     Returns:
         Existence check response with image and drop status.
@@ -174,17 +187,21 @@ async def get_existence_check(
     Raises:
         HTTPException: On HTTP errors or internal errors.
     """
-    async with httpx.AsyncClient() as client:
+    logger.info("User %s checking existence for: %s", user.name, name)
+
+    headers = {"Authorization": authorization}
+    async with httpx.AsyncClient(headers=headers) as client:
         try:
             results = await aggregate_existence_by_name(client, name)
             return ExistenceResponse(results=results)
         except httpx.HTTPStatusError as e:
+            logger.error("HTTP error for user %s: %s", user.name, e)
             raise HTTPException(
                 status_code=e.response.status_code,
                 detail=e.response.text
             ) from e
         except httpx.RequestError as e:
-            logger.error("Request error in existence-check: %s", e)
+            logger.error("Request error for user %s: %s", user.name, e)
             raise HTTPException(
                 status_code=500,
                 detail="An internal server error occurred."
@@ -200,9 +217,6 @@ async def readiness() -> dict:
 
     Returns:
         Status dict with dependency states.
-
-    Raises:
-        HTTPException: 503 if cache is enabled but unavailable.
     """
     cache: CacheClient | None = app.state.cache
 

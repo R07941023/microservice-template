@@ -4,9 +4,49 @@ import logging
 from typing import Any, Dict, Optional
 
 import jwt
+from fastapi import Header, HTTPException
 from jwt import PyJWKClient
+from pydantic import BaseModel
+
+from .config import KEYCLOAK_REALM_URL, JWT_AUDIENCE, get_jwks_url
 
 logger = logging.getLogger(__name__)
+
+
+class User(BaseModel):
+    """User information extracted from JWT token."""
+
+    name: Optional[str] = None
+    email: Optional[str] = None
+
+
+async def get_current_user(authorization: Optional[str] = Header(default=None)) -> User:
+    """
+    Verify JWT and extract current user from authorization header.
+
+    Args:
+        authorization: JWT authorization header value.
+
+    Returns:
+        User object with name and email from JWT claims.
+
+    Raises:
+        HTTPException: 401 if token is invalid or missing.
+    """
+    token_data = verify_jwt_from_header(
+        authorization,
+        jwks_url=get_jwks_url(),
+        issuer=KEYCLOAK_REALM_URL,
+        audience=JWT_AUDIENCE,
+    )
+
+    if token_data is None:
+        raise HTTPException(status_code=401, detail="Invalid or missing token")
+
+    return User(
+        name=token_data.get("name") or token_data.get("preferred_username"),
+        email=token_data.get("email"),
+    )
 
 # Cache for JWKS client per URL
 _jwks_clients: Dict[str, PyJWKClient] = {}

@@ -4,7 +4,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Response
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Response, Depends
 from minio.error import S3Error
 
 from config import MINIO_BUCKET, MINIO_ENDPOINT, THREAD_POOL_SIZE
@@ -18,10 +18,10 @@ from utils.config import (
 )
 from models import ImageCheckRequest, ImageCheckResponse, ImageInfo, ImageExistence
 from services import minio_service
+from utils.auth import User, get_current_user
 from utils.cache import CacheClient
 from utils.health import router as health_router
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -118,16 +118,22 @@ async def get_image(
 
 
 @app.post("/api/images/exist", response_model=ImageCheckResponse)
-async def check_images_exist(request: ImageCheckRequest) -> ImageCheckResponse:
+async def check_images_exist(
+    request: ImageCheckRequest,
+    user: User = Depends(get_current_user),
+) -> ImageCheckResponse:
     """
     Check if multiple images exist in MinIO storage.
 
     Args:
         request: Request containing list of images to check.
+        user: Current authenticated user.
 
     Returns:
         Response with existence status for each image.
     """
+    logger.info("User %s checking existence of %d images", user.name, len(request.images))
+
     async def check_single(image_info: ImageInfo) -> ImageExistence:
         """Check single image existence."""
         object_name = f"{image_info.type}/{image_info.id}.png"

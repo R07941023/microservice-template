@@ -4,7 +4,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Header, BackgroundTasks, Depends, HTTPException
+from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
@@ -13,8 +13,8 @@ from langchain_openai import ChatOpenAI
 from langfuse.langchain import CallbackHandler
 
 from config import settings
-from models import ChatRequest, User
-from utils.auth import verify_jwt_from_header
+from models import ChatRequest
+from utils.auth import User, get_current_user
 from utils.health import router as health_router
 
 logging.basicConfig(level=logging.INFO)
@@ -98,34 +98,6 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(health_router)
 
 
-async def get_current_user(authorization: str | None = Header(default=None)) -> User:
-    """
-    Verify JWT and extract current user from authorization header.
-
-    Args:
-        authorization: JWT authorization header value.
-
-    Returns:
-        User object with name and email from JWT claims.
-
-    Raises:
-        HTTPException: 401 if token is invalid or missing.
-    """
-    token_data = verify_jwt_from_header(
-        authorization,
-        jwks_url=settings.jwks_url,
-        issuer=settings.keycloak_realm_url,
-        audience=settings.jwt_audience,
-    )
-
-    if token_data is None:
-        raise HTTPException(status_code=401, detail="Invalid or missing token")
-
-    return User(
-        name=token_data.get("name") or token_data.get("preferred_username"),
-        email=token_data.get("email"),
-    )
-
 async def stream_chat_generator(
     prompt: str,
     model: str,
@@ -148,7 +120,7 @@ async def stream_chat_generator(
     """
     try:
         input_data = {"messages": [HumanMessage(content=prompt)]}
-        logger.info("Streaming for user %s via LangGraph messages mode.", user.name)
+        logger.info("User %s streaming chat via LangGraph messages mode.", user.name)
         async for message, metadata in app_state.langchain_agent.astream(
             input_data,
             config={"callbacks": [app_state.langfuse_handler]},
@@ -159,8 +131,9 @@ async def stream_chat_generator(
                 await asyncio.sleep(0)
 
     except Exception as e:
-        logger.error("Error during chat generation: %s", e, exc_info=True)
+        logger.error("Error during chat generation for user %s: %s", user.name, e, exc_info=True)
         yield "\n[Error]: streaming!"
+
 
 @app.post("/stream-chat")
 async def stream_chat(
@@ -179,6 +152,8 @@ async def stream_chat(
     Returns:
         StreamingResponse with text/event-stream media type.
     """
+    logger.info("User %s requesting stream-chat with prompt: %s...", user.name, request.prompt[:50])
+
     if not app_state.langchain_agent:
         return {"error": "Agent not initialized"}
 
