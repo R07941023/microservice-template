@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-maple-drop-repo
-          image: yenyinglu/ms-maple-drop-repo:9669811d
+          image: yenyinglu/ms-maple-drop-repo:c784f5c6
           ports:
             - containerPort: 8000
           env:
@@ -31,5 +31,21 @@ spec:
                 secretKeyRef:
                   name: keyvault
                   key: MS-MAPLE-DROP-REPO-MYSQL_PASSWORD
-                  
-            
+            - name: KEYCLOAK_REALM_URL
+              value: "https://keycloak.mydormroom.dpdns.org/realms/master"
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

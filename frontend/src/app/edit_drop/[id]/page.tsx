@@ -17,10 +17,14 @@ export default function EditDropPage() {
   const { token } = useAuth();
 
   useEffect(() => {
-    if (id) {
+    if (id && token) {
       const fetchItem = async () => {
         try {
-          const response = await fetch(`/api/get_drop/${Array.isArray(id) ? id[0] : id}`);
+          const response = await fetch(`/api/get_drop/${Array.isArray(id) ? id[0] : id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
           if (!response.ok) {
             throw new Error('Failed to fetch item data');
           }
@@ -34,7 +38,7 @@ export default function EditDropPage() {
       };
       fetchItem();
     }
-  }, [id]);
+  }, [id, token]);
 
   if (loading) {
     return <div className="p-4 text-center">Loading item details...</div>;

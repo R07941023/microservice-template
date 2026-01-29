@@ -1,6 +1,73 @@
 stages:
+  - test
   - build
   - release
+
+.default-python-test: &default-python-test
+  image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+  tags:
+    - docker
+  before_script:
+    - cd $PROJECT_PATH
+    - uv sync --extra test
+  script:
+    - uv run pytest -v --tb=short
+
+test-ms-maple-drop-repo:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-maple-drop-repo
+
+test-ms-image-retriever:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-image-retriever
+
+test-ms-name-resolver:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-name-resolver
+
+test-ms-search-aggregator:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-search-aggregator
+
+test-ms-llm-orchestrator:
+  <<: *default-python-test
+  stage: test
+  variables:
+    PROJECT_PATH: ./backend/ms-llm-orchestrator
+
+test-frontend:
+  image: node:22-slim
+  stage: test
+  tags:
+    - docker
+  variables:
+    PROJECT_PATH: ./frontend
+  before_script:
+    - cd $PROJECT_PATH
+    - npm ci
+  script:
+    - npm run build
+    - npm run test:ci
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    when: always
+    reports:
+      junit: frontend/test-results/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: frontend/coverage/cobertura-coverage.xml
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - frontend/**/*
 
 .default-build-image: &default-build-image
   image: docker:29.0.4
@@ -15,7 +82,7 @@ stages:
   before_script:
     - docker info
   script:
-    - echo "Build $IMAGE_NAME Docker image with root context"                                                                                                                │
+    - echo "Build $IMAGE_NAME Docker image with root context"
     - docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG -f $DOCKERFILE_PATH/Dockerfile .
     - echo "Login to Docker Hub"
     - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
@@ -25,6 +92,9 @@ stages:
 build-nextjs-service:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-frontend
+      optional: true
   variables:
     IMAGE_NAME: ms-nextjs-service
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
@@ -38,6 +108,9 @@ build-nextjs-service:
 build-ms-maple-drop-repo-service:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-maple-drop-repo
+      optional: true
   variables:
     IMAGE_NAME: ms-maple-drop-repo
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
@@ -51,6 +124,9 @@ build-ms-maple-drop-repo-service:
 build-ms-name-resolver-service:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-name-resolver
+      optional: true
   variables:
     IMAGE_NAME: ms-name-resolver
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
@@ -64,6 +140,9 @@ build-ms-name-resolver-service:
 build-ms-search-aggregator:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-search-aggregator
+      optional: true
   variables:
     IMAGE_NAME: ms-search-aggregator
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
@@ -77,6 +156,9 @@ build-ms-search-aggregator:
 build-ms-image-retriever:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-image-retriever
+      optional: true
   variables:
     IMAGE_NAME: ms-image-retriever
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA
@@ -87,35 +169,12 @@ build-ms-image-retriever:
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
 
-build-ms-image-cache:
-  <<: *default-build-image
-  stage: build
-  variables:
-    IMAGE_NAME: ms-image-cache
-    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
-    DOCKERFILE_PATH: ./backend/ms-image-cache
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-
-build-ms-aggregator-cache:
-  <<: *default-build-image
-  stage: build
-  variables:
-    IMAGE_NAME: ms-aggregator-cache
-    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
-    DOCKERFILE_PATH: ./backend/ms-aggregator-cache
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-
 build-ms-llm-orchestrator:
   <<: *default-build-image
   stage: build
+  needs:
+    - job: test-ms-llm-orchestrator
+      optional: true
   variables:
     IMAGE_NAME: ms-llm-orchestrator
     IMAGE_TAG: $CI_COMMIT_SHORT_SHA

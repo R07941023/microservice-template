@@ -1,11 +1,10 @@
-from pydantic import BaseModel
-from typing import Optional
+"""Data models for LLM orchestrator service."""
 
-class User(BaseModel):
-    name: str
-    email: str
+from pydantic import BaseModel
+
 
 class ChatRequest(BaseModel):
-    prompt: str
-    model: str = 'gemini'
+    """Chat request payload."""
 
+    prompt: str
+    model: str = "gemini"

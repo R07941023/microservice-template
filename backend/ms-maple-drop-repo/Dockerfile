@@ -4,11 +4,13 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir uv
 
+# Copy utils for future use (to ../utils relative to /app)
+COPY backend/utils/ /utils/
+
 COPY backend/ms-maple-drop-repo/pyproject.toml backend/ms-maple-drop-repo/uv.lock* ./
 RUN uv sync --no-dev --frozen
 
 COPY backend/ms-maple-drop-repo/ ./
-COPY backend/utils/ ./utils/
 
 EXPOSE 8000
 

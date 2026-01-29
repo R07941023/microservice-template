@@ -12,7 +12,7 @@ export async function PUT(request: NextRequest, context: unknown) {
   const authorizationHeader = request.headers.get('Authorization');
 
   try {
-    const backendUrl = `http://ms-maple-drop-repo:8000/update_drop/${id}`;
+    const backendUrl = `http://kong:8000/ms-drop-repo/update_drop/${id}`;
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',

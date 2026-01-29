@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-llm-orchestrator
-          image: yenyinglu/ms-llm-orchestrator:9669811d
+          image: yenyinglu/ms-llm-orchestrator:c784f5c6
           ports:
             - containerPort: 8000
           env:
@@ -46,3 +46,19 @@ spec:
                 secretKeyRef:
                   name: keyvault
                   key: MCP_TOKEN
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

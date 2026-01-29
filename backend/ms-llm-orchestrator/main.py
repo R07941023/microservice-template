@@ -1,47 +1,53 @@
-import asyncpg
-import logging
+"""LLM orchestrator microservice for chat streaming with LangChain agents."""
+
 import asyncio
-import os
+import logging
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Header, BackgroundTasks, Depends
+from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-
-from utils.auth import decode_jwt_from_header
-from models import ChatRequest, User
-from config import settings
-
-from langchain_openai import ChatOpenAI
-from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
-
-# Langfuse for tracing
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_openai import ChatOpenAI
 from langfuse.langchain import CallbackHandler
 
-# --- App State ---
-
-class AppState:
-    langchain_agent: object = None 
-    langfuse_handler: CallbackHandler = None
-
-app_state = AppState()
-
-# --- Logging ---
+from config import settings
+from models import ChatRequest
+from utils.auth import User, get_current_user
+from utils.health import router as health_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- App Initialization ---
 
-app = FastAPI()
+class AppState:
+    """Application state container for shared resources."""
 
-# Load environment variables
-MCP_TOKEN = os.getenv("MCP_TOKEN", None)
-MCP_HOST = os.getenv("MCP_HOST", None)
-LITELLM_HOST = os.getenv("LITELLM_HOST", None)
+    langchain_agent: object = None
+    langfuse_handler: CallbackHandler = None
 
-@app.on_event("startup")
-async def startup():
+
+app_state = AppState()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Manage application lifespan.
+
+    Sets up Langfuse handler, MCP client with tools, and LangChain agent on startup.
+    Cleans up resources on shutdown.
+
+    Args:
+        app: FastAPI application instance.
+
+    Yields:
+        None after successful initialization.
+
+    Raises:
+        Exception: If any initialization step fails.
+    """
     logger.info("Starting up application...")
     try:
         # 1. Initialize Langfuse
@@ -53,20 +59,20 @@ async def startup():
             {
                 "weather": {
                     "transport": "streamable_http",
-                    "url": MCP_HOST,
+                    "url": settings.mcp_host,
                     "headers": {
-                        "Authorization": f"Bearer {MCP_TOKEN}",
+                        "Authorization": f"Bearer {settings.mcp_token}",
                         "Accept": "application/json"
                     }
                 }
             }
         )
         tools = await client.get_tools()
-        logger.info(f"MCP Client initialized. Tools: {[t.name for t in tools]}")
+        logger.info("MCP Client initialized. Tools: %s", [t.name for t in tools])
 
         # 3. Initialize LLM
         llm = ChatOpenAI(
-            openai_api_base=LITELLM_HOST,
+            openai_api_base=settings.litellm_host,
             temperature=0,
             model=settings.default_chat_model,
             streaming=True
@@ -79,43 +85,55 @@ async def startup():
         logger.info("LangChain LangGraph Agent initialized.")
 
     except Exception as e:
-        logger.error(f"Failed during startup: {e}", exc_info=True)
+        logger.error("Failed during startup: %s", e, exc_info=True)
         raise
 
-# --- Dependencies ---
+    yield
 
-async def get_current_user(authorization: str | None = Header(default=None)) -> User:
-    user_name, user_email = decode_jwt_from_header(authorization)
-    return User(name=user_name, email=user_email)
+    # Shutdown
+    logger.info("Shutting down application...")
 
-# --- Stream Generator ---
+
+app = FastAPI(lifespan=lifespan)
+app.include_router(health_router)
+
 
 async def stream_chat_generator(
-    prompt: str, 
-    model: str, 
-    user: User, 
+    prompt: str,
+    model: str,
+    user: User,
     background_tasks: BackgroundTasks
 ):
     """
-    根據最新文件，使用 astream(stream_mode="messages") 來獲取 Token。
+    Stream chat responses using LangGraph agent.
+
+    Uses astream with stream_mode="messages" to get tokens.
+
+    Args:
+        prompt: User's chat prompt.
+        model: LLM model name to use.
+        user: Current authenticated user.
+        background_tasks: FastAPI background tasks.
+
+    Yields:
+        str: Streamed message content tokens.
     """
     try:
         input_data = {"messages": [HumanMessage(content=prompt)]}
-        logger.info(f"Streaming for user {user.name} via LangGraph 'messages' mode.")
+        logger.info("User %s streaming chat via LangGraph messages mode.", user.name)
         async for message, metadata in app_state.langchain_agent.astream(
-            input_data, 
+            input_data,
             config={"callbacks": [app_state.langfuse_handler]},
             stream_mode="messages"
         ):
-            if metadata.get("langgraph_node") == "model": # model/tool
+            if metadata.get("langgraph_node") == "model":
                 yield str(message.content)
                 await asyncio.sleep(0)
 
     except Exception as e:
-        logger.error(f"Error during chat generation: {e}", exc_info=True)
-        yield f"\n[Error]: streaming!"
+        logger.error("Error during chat generation for user %s: %s", user.name, e, exc_info=True)
+        yield "\n[Error]: streaming!"
 
-# --- API Endpoints ---
 
 @app.post("/stream-chat")
 async def stream_chat(
@@ -124,19 +142,51 @@ async def stream_chat(
     user: User = Depends(get_current_user),
 ):
     """
-    API endpoint to stream chat responses from LiteLLM.
+    Stream chat responses from LangChain agent.
+
+    Args:
+        request: Chat request with prompt and optional model.
+        background_tasks: FastAPI background tasks.
+        user: Current authenticated user from JWT.
+
+    Returns:
+        StreamingResponse with text/event-stream media type.
     """
+    logger.info("User %s requesting stream-chat with prompt: %s...", user.name, request.prompt[:50])
+
     if not app_state.langchain_agent:
         return {"error": "Agent not initialized"}
 
     generator = stream_chat_generator(
-        prompt=request.prompt, 
-        model=request.model or settings.default_chat_model, 
-        user=user, 
+        prompt=request.prompt,
+        model=request.model or settings.default_chat_model,
+        user=user,
         background_tasks=background_tasks,
     )
-    
+
     return StreamingResponse(
-        generator, 
+        generator,
         media_type="text/event-stream"
     )
+
+
+@app.get("/health/ready")
+async def readiness() -> dict:
+    """
+    Readiness probe endpoint.
+
+    Checks if LangChain agent is initialized.
+
+    Returns:
+        Status dict with dependency states.
+
+    Raises:
+        HTTPException: 503 if agent is not initialized.
+    """
+    if not app_state.langchain_agent:
+        raise HTTPException(status_code=503, detail="Agent not initialized")
+
+    return {
+        "status": "ready",
+        "agent": "initialized",
+    }

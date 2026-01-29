@@ -6,13 +6,32 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "asyncpg",
-    "pyjwt", # For decoding JWTs
     "pydantic-settings",
     "langchain-openai",
     "langchain-mcp-adapters",
     "langchain",
     "langchain_core",
-    "langfuse"
+    "langfuse",
+    "utils",
 ]
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
+
+[tool.uv.sources]
+utils = { path = "../utils", editable = true }
 
 [tool.uv]
