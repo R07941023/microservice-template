@@ -5,7 +5,8 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import User, ChatRequest
+from models import ChatRequest
+from utils.auth import User
 
 
 class TestUser:

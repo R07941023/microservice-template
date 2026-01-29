@@ -7,12 +7,26 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+def mock_get_current_user():
+    """Mock user for testing."""
+    from utils.auth import User
+    return User(name="testuser", email="test@example.com")
+
+
 @pytest.fixture
 def client():
-    """Create a FastAPI test client."""
+    """Create a FastAPI test client with mocked auth."""
     from main import app
+    from utils.auth import get_current_user
+
+    # Override the auth dependency
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+
     with TestClient(app) as test_client:
         yield test_client
+
+    # Clean up overrides
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture

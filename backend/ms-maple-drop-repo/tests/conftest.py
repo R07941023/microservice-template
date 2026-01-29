@@ -7,6 +7,12 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+def mock_get_current_user():
+    """Mock user for testing."""
+    from utils.auth import User
+    return User(name="testuser", email="test@example.com")
+
+
 @pytest.fixture
 def mock_cursor():
     """Create a mock database cursor."""
@@ -38,6 +44,7 @@ def client(mock_cursor, mock_writer_cursor):
     }):
         with patch("mysql.connector.pooling.MySQLConnectionPool"):
             from main import app, get_db_cursor, get_db_writer_cursor
+            from utils.auth import get_current_user
 
             def override_get_db_cursor():
                 yield mock_cursor
@@ -47,6 +54,7 @@ def client(mock_cursor, mock_writer_cursor):
 
             app.dependency_overrides[get_db_cursor] = override_get_db_cursor
             app.dependency_overrides[get_db_writer_cursor] = override_get_db_writer_cursor
+            app.dependency_overrides[get_current_user] = mock_get_current_user
 
             with TestClient(app) as test_client:
                 yield test_client

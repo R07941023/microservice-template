@@ -7,6 +7,12 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+def mock_get_current_user():
+    """Mock user for testing."""
+    from utils.auth import User
+    return User(name="testuser", email="test@example.com")
+
+
 @pytest.fixture
 def mock_collection():
     """Create a mock MongoDB collection."""
@@ -33,8 +39,14 @@ def client(mock_collection, mock_mongo_client):
         with patch("pymongo.MongoClient", return_value=mock_mongo_client):
             with patch("main.collection", mock_collection):
                 from main import app
+                from utils.auth import get_current_user
+
+                app.dependency_overrides[get_current_user] = mock_get_current_user
+
                 with TestClient(app) as test_client:
                     yield test_client
+
+                app.dependency_overrides.clear()
 
 
 @pytest.fixture

@@ -96,20 +96,28 @@ class TestGetCurrentUser:
 
     def test_get_current_user_with_valid_token(self, valid_jwt_token):
         """Test extracting user from valid JWT."""
-        from main import get_current_user
+        from utils.auth import get_current_user
         import asyncio
 
-        user = asyncio.run(get_current_user(valid_jwt_token))
+        # Mock the JWT verification to return decoded token data
+        with patch("utils.auth.verify_jwt_from_header") as mock_verify:
+            mock_verify.return_value = {
+                "name": "Test User",
+                "email": "test@example.com"
+            }
 
-        assert user.name == "Test User"
-        assert user.email == "test@example.com"
+            user = asyncio.run(get_current_user(valid_jwt_token))
+
+            assert user.name == "Test User"
+            assert user.email == "test@example.com"
 
     def test_get_current_user_without_token(self):
-        """Test user extraction without token."""
-        from main import get_current_user
+        """Test user extraction without token raises 401."""
+        from utils.auth import get_current_user
+        from fastapi import HTTPException
         import asyncio
 
-        user = asyncio.run(get_current_user(None))
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(get_current_user(None))
 
-        assert user.name is None
-        assert user.email is None
+        assert exc_info.value.status_code == 401

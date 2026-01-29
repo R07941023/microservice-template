@@ -7,6 +7,12 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+def mock_get_current_user():
+    """Mock user for testing."""
+    from utils.auth import User
+    return User(name="testuser", email="test@example.com")
+
+
 @pytest.fixture
 def mock_langchain_agent():
     """Create a mock LangChain agent."""
@@ -40,8 +46,14 @@ def client(mock_langchain_agent, mock_langfuse_handler):
                 with patch("main.ChatOpenAI"):
                     with patch("main.create_agent", return_value=mock_langchain_agent):
                         from main import app
+                        from utils.auth import get_current_user
+
+                        app.dependency_overrides[get_current_user] = mock_get_current_user
+
                         with TestClient(app, raise_server_exceptions=False) as test_client:
                             yield test_client
+
+                        app.dependency_overrides.clear()
 
 
 @pytest.fixture

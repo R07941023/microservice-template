@@ -2,6 +2,9 @@ import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 import httpx
 
+# Mock authorization header for all tests
+AUTH_HEADERS = {"Authorization": "Bearer mock-token"}
+
 
 class TestSearchDropsAugmented:
     """Tests for /api/search/drops-augmented endpoint."""
@@ -12,7 +15,11 @@ class TestSearchDropsAugmented:
             from models import AugmentedDrop
             mock_search.return_value = [AugmentedDrop(**d) for d in sample_augmented_drops]
 
-            response = client.get("/api/search/drops-augmented", params={"name": "Snail"})
+            response = client.get(
+                "/api/search/drops-augmented",
+                params={"name": "Snail"},
+                headers=AUTH_HEADERS,
+            )
 
             assert response.status_code == 200
             data = response.json()
@@ -24,7 +31,11 @@ class TestSearchDropsAugmented:
         with patch("main.search_and_augment_drops", new_callable=AsyncMock) as mock_search:
             mock_search.return_value = []
 
-            response = client.get("/api/search/drops-augmented", params={"name": "NonExistent"})
+            response = client.get(
+                "/api/search/drops-augmented",
+                params={"name": "NonExistent"},
+                headers=AUTH_HEADERS,
+            )
 
             assert response.status_code == 200
             data = response.json()
@@ -32,7 +43,7 @@ class TestSearchDropsAugmented:
 
     def test_search_drops_augmented_missing_name(self, client):
         """Test search without name parameter."""
-        response = client.get("/api/search/drops-augmented")
+        response = client.get("/api/search/drops-augmented", headers=AUTH_HEADERS)
 
         assert response.status_code == 422
 
@@ -49,7 +60,11 @@ class TestSearchDropsAugmented:
                 response=mock_response
             )
 
-            response = client.get("/api/search/drops-augmented", params={"name": "Snail"})
+            response = client.get(
+                "/api/search/drops-augmented",
+                params={"name": "Snail"},
+                headers=AUTH_HEADERS,
+            )
 
             assert response.status_code == 500
 
@@ -65,7 +80,7 @@ class TestExistenceCheck:
                 {"type": "item", "id": 2000001, "image_exist": True, "drop_exist": False}
             ]
 
-            response = client.get("/api/existence-check/Snail")
+            response = client.get("/api/existence-check/Snail", headers=AUTH_HEADERS)
 
             assert response.status_code == 200
             data = response.json()
@@ -77,7 +92,7 @@ class TestExistenceCheck:
         with patch("main.aggregate_existence_by_name", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = []
 
-            response = client.get("/api/existence-check/NonExistent")
+            response = client.get("/api/existence-check/NonExistent", headers=AUTH_HEADERS)
 
             assert response.status_code == 200
             data = response.json()
@@ -96,6 +111,6 @@ class TestExistenceCheck:
                 response=mock_response
             )
 
-            response = client.get("/api/existence-check/Snail")
+            response = client.get("/api/existence-check/Snail", headers=AUTH_HEADERS)
 
             assert response.status_code == 404

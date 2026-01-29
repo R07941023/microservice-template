@@ -7,6 +7,12 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+def mock_get_current_user():
+    """Mock user for testing."""
+    from utils.auth import User
+    return User(name="testuser", email="test@example.com")
+
+
 @pytest.fixture
 def mock_minio_client():
     """Create a mock MinIO client."""
@@ -26,8 +32,14 @@ def client(mock_minio_client):
     }):
         with patch("services.minio_service.minio_client", mock_minio_client):
             from main import app
+            from utils.auth import get_current_user
+
+            app.dependency_overrides[get_current_user] = mock_get_current_user
+
             with TestClient(app) as test_client:
                 yield test_client
+
+            app.dependency_overrides.clear()
 
 
 @pytest.fixture
