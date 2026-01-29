@@ -31,9 +31,9 @@ services:
   routes:
   - name: search-aggregator-route
     paths:
-    - /search
+    - /ms-search-aggregator
     path_handling: v1
-    strip_path: false
+    strip_path: true
     protocols:
     - http
     - https
@@ -67,11 +67,11 @@ services:
   retries: 5
   enabled: true
   routes:
-  - name: llm-orchestrator-stream-chat-route
+  - name: llm-orchestrator-route
     paths:
-    - /stream-chat
+    - /ms-llm-orchestrator
     path_handling: v1
-    strip_path: false
+    strip_path: true
     protocols:
     - http
     - https
@@ -95,3 +95,72 @@ services:
         secret_is_base64: false
         uri_param_names:
         - jwt
+- name: image-retriever-service
+  host: ms-image-retriever
+  port: 8000
+  protocol: http
+  connect_timeout: 60000
+  read_timeout: 60000
+  write_timeout: 60000
+  retries: 5
+  enabled: true
+  routes:
+  - name: image-retriever-route
+    paths:
+    - /ms-image-retriever
+    path_handling: v1
+    strip_path: true
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    https_redirect_status_code: 426
+    preserve_host: false
+- name: drop-repo-service
+  host: ms-maple-drop-repo
+  port: 8000
+  protocol: http
+  connect_timeout: 60000
+  read_timeout: 60000
+  write_timeout: 60000
+  retries: 5
+  enabled: true
+  routes:
+  - name: drop-repo-route
+    paths:
+    - /ms-drop-repo
+    path_handling: v1
+    strip_path: true
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    https_redirect_status_code: 426
+    preserve_host: false
+- name: name-resolver-service
+  host: ms-name-resolver
+  port: 8000
+  protocol: http
+  connect_timeout: 60000
+  read_timeout: 60000
+  write_timeout: 60000
+  retries: 5
+  enabled: true
+  routes:
+  - name: name-resolver-route
+    paths:
+    - /ms-name-resolver
+    path_handling: v1
+    strip_path: true
+    protocols:
+    - http
+    - https
+    regex_priority: 0
+    request_buffering: true
+    response_buffering: true
+    https_redirect_status_code: 426
+    preserve_host: false

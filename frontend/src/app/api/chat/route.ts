@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 
 // It's a good practice to use an environment variable for the service URL
-const ORCHESTRATOR_URL = process.env.LLM_ORCHESTRATOR_URL || 'http://kong:8000/stream-chat';
+const ORCHESTRATOR_URL = process.env.LLM_ORCHESTRATOR_URL || 'http://kong:8000/ms-llm-orchestrator/stream-chat';
 
 export async function POST(req: NextRequest) {
   try {

@@ -17,31 +17,31 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/images/:path*',
-        destination: 'http://ms-image-retriever:8000/images/:path*',
+        destination: 'http://kong:8000/ms-image-retriever/images/:path*',
       },
       {
         source: '/api/get_drop/:path*',
-        destination: 'http://ms-maple-drop-repo:8000/get_drop/:path*',
+        destination: 'http://kong:8000/ms-drop-repo/get_drop/:path*',
       },
       {
         source: '/api/add_drop',
-        destination: 'http://ms-maple-drop-repo:8000/add_drop',
+        destination: 'http://kong:8000/ms-drop-repo/add_drop',
       },
       {
         source: '/api/delete_drop/:path*',
-        destination: 'http://ms-maple-drop-repo:8000/delete_drop/:path*',
+        destination: 'http://kong:8000/ms-drop-repo/delete_drop/:path*',
       },
       {
         source: '/api/names/all',
-        destination: 'http://ms-name-resolver:8000/api/names/all',
+        destination: 'http://kong:8000/ms-name-resolver/api/names/all',
       },
       {
         source: '/api/name-to-ids/:path*',
-        destination: 'http://ms-name-resolver:8000/api/name-to-ids/:path*',
+        destination: 'http://kong:8000/ms-name-resolver/api/name-to-ids/:path*',
       },
       {
         source: '/api/existence-check/:path*',
-        destination: 'http://ms-search-aggregator:8000/api/existence-check/:path*',
+        destination: 'http://kong:8000/ms-search-aggregator/api/existence-check/:path*',
       },
     ]
   },

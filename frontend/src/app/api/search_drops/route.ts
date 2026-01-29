@@ -21,12 +21,12 @@ export async function GET(request: Request) {
     let backendUrl: string;
 
     if (devModeHeader === 'true') {
-      // If dev mode is on, bypass Kong and hit ms-search-aggregator directly for drops-augmented
-      backendUrl = `http://ms-search-aggregator:8000/api/search/drops-augmented?name=${query}`;
-      console.log(`[Dev Mode ON] Routing to ms-search-aggregator: ${backendUrl}`);
+      // If dev mode is on, use drops-augmented endpoint
+      backendUrl = `http://kong:8000/ms-search-aggregator/api/search/drops-augmented?name=${query}`;
+      console.log(`[Dev Mode ON] Routing to drops-augmented: ${backendUrl}`);
     } else {
       // Default behavior: forward to Kong
-      backendUrl = `http://kong:8000/search/${query}`;
+      backendUrl = `http://kong:8000/ms-search-aggregator/search/${query}`;
       console.log(`[Dev Mode OFF] Routing to Kong: ${backendUrl}`);
     }
     

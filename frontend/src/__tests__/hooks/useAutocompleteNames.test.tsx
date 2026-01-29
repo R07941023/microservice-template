@@ -1,18 +1,57 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useAutocompleteNames } from '@/hooks/useAutocompleteNames';
+import React, { ReactNode } from 'react';
 import { server } from '../mocks/server';
 import { http, HttpResponse } from 'msw';
 import { mockNames } from '../mocks/handlers';
 
+// Mock keycloak module at the top level
+vi.mock('@/keycloak', () => {
+  const mockKeycloak = {
+    init: vi.fn().mockResolvedValue(true),
+    login: vi.fn(),
+    logout: vi.fn(),
+    updateToken: vi.fn().mockResolvedValue(true),
+    loadUserProfile: vi.fn().mockResolvedValue({
+      id: 'test-user-id',
+      username: 'testuser',
+      email: 'test@example.com',
+    }),
+    token: 'mock-token',
+    authenticated: true,
+    tokenParsed: {
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      sub: 'test-user-id',
+    },
+    timeSkew: 0,
+    onTokenExpired: undefined as (() => void) | undefined,
+  };
+  return { default: mockKeycloak };
+});
+
+// Import after mock
+import { useAutocompleteNames } from '@/hooks/useAutocompleteNames';
+import { AuthProvider } from '@/context/AuthContext';
+
+// Wrapper component with AuthProvider
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <AuthProvider>{children}</AuthProvider>
+);
+
 describe('useAutocompleteNames', () => {
-  it('should return empty array initially', () => {
-    const { result } = renderHook(() => useAutocompleteNames());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return empty array initially', async () => {
+    const { result } = renderHook(() => useAutocompleteNames(), { wrapper });
+
+    // Initially empty before fetch completes
     expect(result.current).toEqual([]);
   });
 
   it('should fetch and return names', async () => {
-    const { result } = renderHook(() => useAutocompleteNames());
+    const { result } = renderHook(() => useAutocompleteNames(), { wrapper });
 
     await waitFor(() => {
       expect(result.current).toEqual(mockNames);
@@ -28,7 +67,7 @@ describe('useAutocompleteNames', () => {
       })
     );
 
-    const { result } = renderHook(() => useAutocompleteNames());
+    const { result } = renderHook(() => useAutocompleteNames(), { wrapper });
 
     // Should remain empty on error
     await waitFor(() => {
@@ -49,7 +88,7 @@ describe('useAutocompleteNames', () => {
       })
     );
 
-    const { result } = renderHook(() => useAutocompleteNames());
+    const { result } = renderHook(() => useAutocompleteNames(), { wrapper });
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalled();
@@ -67,7 +106,7 @@ describe('useAutocompleteNames', () => {
       })
     );
 
-    const { result } = renderHook(() => useAutocompleteNames());
+    const { result } = renderHook(() => useAutocompleteNames(), { wrapper });
 
     await waitFor(() => {
       expect(result.current).toEqual([]);
@@ -81,7 +120,7 @@ describe('useAutocompleteNames', () => {
       })
     );
 
-    const { result } = renderHook(() => useAutocompleteNames());
+    const { result } = renderHook(() => useAutocompleteNames(), { wrapper });
 
     await waitFor(() => {
       // Should fallback to empty array when names is undefined

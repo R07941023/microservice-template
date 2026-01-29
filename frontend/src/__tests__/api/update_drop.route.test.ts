@@ -55,7 +55,7 @@ describe('update_drop API Route', () => {
     await PUT(request, context);
 
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://ms-maple-drop-repo:8000/update_drop/123',
+      'http://kong:8000/ms-drop-repo/update_drop/123',
       expect.objectContaining({
         method: 'PUT',
         headers: expect.objectContaining({
@@ -205,7 +205,7 @@ describe('update_drop API Route', () => {
 
     // Should use the first element
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://ms-maple-drop-repo:8000/update_drop/123',
+      'http://kong:8000/ms-drop-repo/update_drop/123',
       expect.any(Object)
     );
   });

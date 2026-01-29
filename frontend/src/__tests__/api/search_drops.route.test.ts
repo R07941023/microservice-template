@@ -52,7 +52,7 @@ describe('search_drops API Route', () => {
     await GET(request);
 
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('http://kong:8000/search/test'),
+      expect.stringContaining('http://kong:8000/ms-search-aggregator/search/test'),
       expect.objectContaining({
         method: 'GET',
         cache: 'no-store',
@@ -60,7 +60,7 @@ describe('search_drops API Route', () => {
     );
   });
 
-  it('should forward request to ms-search-aggregator when dev mode is on', async () => {
+  it('should forward request to drops-augmented endpoint when dev mode is on', async () => {
     const mockData = { data: [{ id: '1', item_name: 'Test Item' }] };
     mockFetch.mockResolvedValue({
       ok: true,
@@ -79,7 +79,7 @@ describe('search_drops API Route', () => {
     await GET(request);
 
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('http://ms-search-aggregator:8000/api/search/drops-augmented'),
+      expect.stringContaining('http://kong:8000/ms-search-aggregator/api/search/drops-augmented'),
       expect.any(Object)
     );
   });
