@@ -129,6 +129,15 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
       LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL}
       MCP_TOKEN: ${MCP_TOKEN}
+      PGVECTOR_HOST: host.docker.internal
+      PGVECTOR_PORT: 30631
+      PGVECTOR_DBNAME: ai_agent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGVECTOR_COLLECTION: memories
+      NEO4J_URL: bolt://host.docker.internal:30633
+      NEO4J_USERNAME: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
     ports:
       - "30105:8000"
     networks:

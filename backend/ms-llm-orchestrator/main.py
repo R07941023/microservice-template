@@ -7,13 +7,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from langchain.agents import create_agent
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_openai import ChatOpenAI
 from langfuse.langchain import CallbackHandler
+from mem0 import Memory
 
 from config import settings
 from models import ChatRequest
+from tools.memory import add_memory, build_mem0_client, build_system_prompt, get_user_id, search_memories
 from utils.auth import User, get_current_user
 from utils.health import router as health_router
 
@@ -26,6 +28,7 @@ class AppState:
 
     langchain_agent: object = None
     langfuse_handler: CallbackHandler = None
+    memory_client: Memory = None
 
 
 app_state = AppState()
@@ -77,12 +80,12 @@ async def lifespan(app: FastAPI):
             model=settings.default_chat_model,
             streaming=True
         )
-        app_state.langchain_agent = create_agent(
-            llm,
-            tools=tools,
-            system_prompt=settings.system_prompt
-        )
+        app_state.langchain_agent = create_agent(llm, tools=tools)
         logger.info("LangChain LangGraph Agent initialized.")
+
+        # 4. Initialize mem0 Memory client
+        app_state.memory_client = await asyncio.to_thread(build_mem0_client, settings)
+        logger.info("mem0 Memory client initialized.")
 
     except Exception as e:
         logger.error("Failed during startup: %s", e, exc_info=True)
@@ -107,7 +110,8 @@ async def stream_chat_generator(
     """
     Stream chat responses using LangGraph agent.
 
-    Uses astream with stream_mode="messages" to get tokens.
+    Searches mem0 long-term memory before streaming to inject relevant context,
+    then saves the full conversation after streaming completes.
 
     Args:
         prompt: User's chat prompt.
@@ -118,21 +122,32 @@ async def stream_chat_generator(
     Yields:
         str: Streamed message content tokens.
     """
+    user_id = get_user_id(user.name)
+    search_result = await search_memories(app_state.memory_client, prompt, user_id)
+    system_prompt = build_system_prompt(settings.system_prompt_template, search_result)
+
+    input_data = {"messages": [SystemMessage(content=system_prompt), HumanMessage(content=prompt)]}
+    logger.info("User %s streaming chat via LangGraph messages mode.", user.name)
+
+    response_tokens: list[str] = []
     try:
-        input_data = {"messages": [HumanMessage(content=prompt)]}
-        logger.info("User %s streaming chat via LangGraph messages mode.", user.name)
         async for message, metadata in app_state.langchain_agent.astream(
             input_data,
             config={"callbacks": [app_state.langfuse_handler]},
             stream_mode="messages"
         ):
             if metadata.get("langgraph_node") == "model":
-                yield str(message.content)
+                token = str(message.content)
+                response_tokens.append(token)
+                yield token
                 await asyncio.sleep(0)
 
     except Exception as e:
         logger.error("Error during chat generation for user %s: %s", user.name, e, exc_info=True)
         yield "\n[Error]: streaming!"
+        return
+
+    background_tasks.add_task(add_memory, app_state.memory_client, prompt, "".join(response_tokens), user_id)
 
 
 @app.post("/stream-chat")

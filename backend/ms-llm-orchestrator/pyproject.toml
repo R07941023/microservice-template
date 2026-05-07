@@ -12,6 +12,11 @@ dependencies = [
     "langchain",
     "langchain_core",
     "langfuse",
+    "mem0ai==2.0.0b0",
+    "google-genai",
+    "langchain-neo4j",
+    "rank-bm25",
+    "psycopg2-binary",
     "utils",
 ]
 requires-python = ">=3.11"
