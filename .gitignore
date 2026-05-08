@@ -1,5 +1,6 @@
 frontend/node_modules
 frontend/.next
+frontend/**/*.tsbuildinfo
 __pycache__/
 .env
 .venv/

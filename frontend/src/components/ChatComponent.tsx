@@ -1,70 +1,37 @@
 'use client';
 
-import { useState, FormEvent, useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, FormEvent } from 'react';
+import { useChat } from '@ai-sdk/react';
+import { TextStreamChatTransport } from 'ai';
 import { chatTexts } from '@/constants/text';
 import { useAuth } from '@/context/AuthContext';
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
 export default function ChatComponent() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const { token } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { authFetch } = useAuth(); // Get the global authFetch function
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new TextStreamChatTransport({
+      api: '/api/chat',
+      headers: (): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {}),
+    }),
+  });
+
+  const isLoading = status === 'submitted' || status === 'streaming';
 
   useEffect(() => {
     if (isOpen) {
-      scrollToBottom();
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isOpen]);
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
-
-    const userMessage: Message = { role: 'user', content: input };
-    setMessages(prev => [...prev, userMessage, { role: 'assistant', content: '' }]);
+    if (!input.trim() || isLoading) return;
+    sendMessage({ text: input });
     setInput('');
-
-    try {
-      const response = await authFetch('/api/chat', {
-        method: 'POST',
-        body: JSON.stringify({ prompt: input }),
-      });
-
-      if (!response.body) throw new Error('No response body');
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        const chunk = decoder.decode(value, { stream: true });
-        
-        setMessages(prev => {
-          const lastMessage = prev[prev.length - 1];
-          const updatedLastMessage = { ...lastMessage, content: lastMessage.content + chunk };
-          return [...prev.slice(0, -1), updatedLastMessage];
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching streaming data:", error);
-      setMessages(prev => {
-          const lastMessage = prev[prev.length - 1];
-          const updatedLastMessage = { ...lastMessage, content: chatTexts.connectionError };
-          return [...prev.slice(0, -1), updatedLastMessage];
-      });
-    }
   };
 
   return (
@@ -77,13 +44,24 @@ export default function ChatComponent() {
           <button onClick={() => setIsOpen(false)} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
         </div>
         <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-white">
-          {messages.map((msg, index) => (
-            <div key={index} className={`flex max-w-[85%] ${msg.role === 'user' ? 'self-end' : 'self-start'}`}>
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex max-w-[85%] ${msg.role === 'user' ? 'self-end' : 'self-start'}`}>
               <div className={`py-2 px-4 rounded-2xl whitespace-pre-wrap break-words ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
-                {msg.content}
+                {msg.parts
+                  .filter((part) => part.type === 'text')
+                  .map((part, i) => (
+                    <span key={i}>{part.text}</span>
+                  ))}
               </div>
             </div>
           ))}
+          {error && (
+            <div className="self-start max-w-[85%]">
+              <div className="py-2 px-4 rounded-2xl bg-gray-200 text-gray-800">
+                {chatTexts.connectionError}
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
         <form onSubmit={handleSubmit} className="flex p-4 border-t border-gray-200 bg-gray-50">
@@ -94,7 +72,11 @@ export default function ChatComponent() {
             placeholder={chatTexts.inputPlaceholder}
             className="flex-1 py-2 px-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button type="submit" className="ml-2 py-2 px-4 rounded-lg border-none bg-blue-500 text-white cursor-pointer hover:bg-blue-600 disabled:bg-blue-300">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="ml-2 py-2 px-4 rounded-lg border-none bg-blue-500 text-white cursor-pointer hover:bg-blue-600 disabled:bg-blue-300"
+          >
             {chatTexts.sendButton}
           </button>
         </form>
