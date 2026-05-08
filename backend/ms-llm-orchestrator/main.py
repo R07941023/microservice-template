@@ -27,7 +27,6 @@ class AppState:
     """Application state container for shared resources."""
 
     langchain_agent: object = None
-    langfuse_handler: CallbackHandler = None
     memory_client: Memory = None
 
 
@@ -39,7 +38,7 @@ async def lifespan(app: FastAPI):
     """
     Manage application lifespan.
 
-    Sets up Langfuse handler, MCP client with tools, and LangChain agent on startup.
+    Sets up MCP client with tools, LangChain agent, and mem0 memory client on startup.
     Cleans up resources on shutdown.
 
     Args:
@@ -53,11 +52,7 @@ async def lifespan(app: FastAPI):
     """
     logger.info("Starting up application...")
     try:
-        # 1. Initialize Langfuse
-        app_state.langfuse_handler = CallbackHandler()
-        logger.info("Langfuse CallbackHandler initialized.")
-
-        # 2. Initialize MCP Client and Tools
+        # 1. Initialize MCP Client and Tools
         client = MultiServerMCPClient(
             {
                 "weather": {
@@ -73,7 +68,7 @@ async def lifespan(app: FastAPI):
         tools = await client.get_tools()
         logger.info("MCP Client initialized. Tools: %s", [t.name for t in tools])
 
-        # 3. Initialize LLM
+        # 2. Initialize LLM
         llm = ChatOpenAI(
             openai_api_base=settings.litellm_host,
             temperature=0,
@@ -83,7 +78,7 @@ async def lifespan(app: FastAPI):
         app_state.langchain_agent = create_agent(llm, tools=tools)
         logger.info("LangChain LangGraph Agent initialized.")
 
-        # 4. Initialize mem0 Memory client
+        # 3. Initialize mem0 Memory client
         app_state.memory_client = await asyncio.to_thread(build_mem0_client, settings)
         logger.info("mem0 Memory client initialized.")
 
@@ -129,11 +124,14 @@ async def stream_chat_generator(
     input_data = {"messages": [SystemMessage(content=system_prompt), HumanMessage(content=prompt)]}
     logger.info("User %s streaming chat via LangGraph messages mode.", user.name)
 
+    # Per-request handler so concurrent requests each get isolated Langfuse traces
+    langfuse_handler = CallbackHandler()
+
     response_tokens: list[str] = []
     try:
         async for message, metadata in app_state.langchain_agent.astream(
             input_data,
-            config={"callbacks": [app_state.langfuse_handler]},
+            config={"callbacks": [langfuse_handler]},
             stream_mode="messages"
         ):
             if metadata.get("langgraph_node") == "model":
