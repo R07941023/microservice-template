@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from langchain.agents import create_agent
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_openai import ChatOpenAI
 from langfuse.langchain import CallbackHandler
@@ -100,7 +100,8 @@ async def stream_chat_generator(
     prompt: str,
     model: str,
     user: User,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    history: list = None,
 ):
     """
     Stream chat responses using LangGraph agent.
@@ -113,6 +114,7 @@ async def stream_chat_generator(
         model: LLM model name to use.
         user: Current authenticated user.
         background_tasks: FastAPI background tasks.
+        history: Recent conversation turns to include as context.
 
     Yields:
         str: Streamed message content tokens.
@@ -121,7 +123,14 @@ async def stream_chat_generator(
     search_result = await search_memories(app_state.memory_client, prompt, user_id)
     system_prompt = build_system_prompt(settings.system_prompt_template, search_result)
 
-    input_data = {"messages": [SystemMessage(content=system_prompt), HumanMessage(content=prompt)]}
+    _role_map = {"user": HumanMessage, "assistant": AIMessage}
+    history_messages = [
+        _role_map[msg.role](content=msg.content)
+        for msg in (history or [])
+        if msg.role in _role_map
+    ]
+
+    input_data = {"messages": [SystemMessage(content=system_prompt), *history_messages, HumanMessage(content=prompt)]}
     logger.info("User %s streaming chat via LangGraph messages mode.", user.name)
 
     # Per-request handler so concurrent requests each get isolated Langfuse traces
@@ -175,6 +184,7 @@ async def stream_chat(
         model=request.model or settings.default_chat_model,
         user=user,
         background_tasks=background_tasks,
+        history=request.history,
     )
 
     return StreamingResponse(

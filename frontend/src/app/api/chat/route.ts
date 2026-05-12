@@ -15,6 +15,16 @@ export async function POST(req: NextRequest) {
       return new Response('Prompt is required', { status: 400 });
     }
 
+    const getMessageText = (msg: UIMessage) =>
+      msg.parts.filter(p => p.type === 'text').map(p => p.text ?? '').join('');
+
+    // Last 3 turns (6 messages) before the current user message
+    const history = messages
+      .slice(0, -1)
+      .slice(-6)
+      .map(m => ({ role: m.role, content: getMessageText(m) }))
+      .filter(m => m.content);
+
     // Forward the request to the Python backend
     const response = await fetch(ORCHESTRATOR_URL, {
       method: 'POST',
@@ -22,7 +32,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
         'Authorization': authorizationHeader,
       },
-      body: JSON.stringify({ prompt: prompt }),
+      body: JSON.stringify({ prompt, history }),
     });
 
     // Check if the request to the backend was successful
