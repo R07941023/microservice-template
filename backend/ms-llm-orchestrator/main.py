@@ -10,12 +10,13 @@ from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_openai import ChatOpenAI
+from langfuse import get_client as get_langfuse_client
 from langfuse.langchain import CallbackHandler
 from mem0 import Memory
 
 from config import settings
 from models import ChatRequest
-from tools.memory import add_memory, build_mem0_client, build_system_prompt, get_user_id, search_memories
+from tools.memory import add_memory, build_mem0_client, build_system_prompt, search_memories
 from utils.auth import User, get_current_user
 from utils.health import router as health_router
 
@@ -102,6 +103,7 @@ async def stream_chat_generator(
     user: User,
     background_tasks: BackgroundTasks,
     history: list = None,
+    session_id: str = None,
 ):
     """
     Stream chat responses using LangGraph agent.
@@ -115,12 +117,12 @@ async def stream_chat_generator(
         user: Current authenticated user.
         background_tasks: FastAPI background tasks.
         history: Recent conversation turns to include as context.
+        session_id: Frontend session ID for LangGraph thread and Langfuse session grouping.
 
     Yields:
         str: Streamed message content tokens.
     """
-    user_id = get_user_id(user.name)
-    search_result = await search_memories(app_state.memory_client, prompt, user_id)
+    search_result = await search_memories(app_state.memory_client, prompt, session_id)
     system_prompt = build_system_prompt(settings.system_prompt_template, search_result)
 
     _role_map = {"user": HumanMessage, "assistant": AIMessage}
@@ -133,28 +135,35 @@ async def stream_chat_generator(
     input_data = {"messages": [SystemMessage(content=system_prompt), *history_messages, HumanMessage(content=prompt)]}
     logger.info("User %s streaming chat via LangGraph messages mode.", user.name)
 
-    # Per-request handler so concurrent requests each get isolated Langfuse traces
-    langfuse_handler = CallbackHandler()
-
+    langfuse_client = get_langfuse_client()
     response_tokens: list[str] = []
-    try:
-        async for message, metadata in app_state.langchain_agent.astream(
-            input_data,
-            config={"callbacks": [langfuse_handler]},
-            stream_mode="messages"
-        ):
-            if metadata.get("langgraph_node") == "model":
-                token = str(message.content)
-                response_tokens.append(token)
-                yield token
-                await asyncio.sleep(0)
 
-    except Exception as e:
-        logger.error("Error during chat generation for user %s: %s", user.name, e, exc_info=True)
-        yield "\n[Error]: streaming!"
-        return
+    with langfuse_client.start_as_current_span(name="stream-chat"):
+        langfuse_client.update_current_trace(session_id=session_id, user_id=user.name)
+        trace_id = langfuse_client.get_current_trace_id()
+        langfuse_handler = CallbackHandler(trace_context={"trace_id": trace_id})
 
-    background_tasks.add_task(add_memory, app_state.memory_client, prompt, "".join(response_tokens), user_id)
+        try:
+            async for message, metadata in app_state.langchain_agent.astream(
+                input_data,
+                config={
+                    "configurable": {"thread_id": session_id},
+                    "callbacks": [langfuse_handler],
+                },
+                stream_mode="messages"
+            ):
+                if metadata.get("langgraph_node") == "model":
+                    token = str(message.content)
+                    response_tokens.append(token)
+                    yield token
+                    await asyncio.sleep(0)
+
+        except Exception as e:
+            logger.error("Error during chat generation for user %s: %s", user.name, e, exc_info=True)
+            yield "\n[Error]: streaming!"
+            return
+
+    background_tasks.add_task(add_memory, app_state.memory_client, prompt, "".join(response_tokens), session_id)
 
 
 @app.post("/stream-chat")
@@ -185,6 +194,7 @@ async def stream_chat(
         user=user,
         background_tasks=background_tasks,
         history=request.history,
+        session_id=request.session_id,
     )
 
     return StreamingResponse(

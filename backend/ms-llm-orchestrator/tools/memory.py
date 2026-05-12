@@ -10,9 +10,6 @@ from config import Settings
 
 logger = logging.getLogger(__name__)
 
-MAPLESTORY_USER_PREFIX = "maplestory"
-
-
 def build_mem0_client(settings: Settings) -> Memory:
     """
     Build and return an initialized mem0 Memory client.
@@ -67,50 +64,38 @@ def build_mem0_client(settings: Settings) -> Memory:
     return Memory.from_config(config)
 
 
-def get_user_id(username: str) -> str:
-    """
-    Return the mem0 user_id for a given username.
 
-    Args:
-        username: Authenticated user's name.
-
-    Returns:
-        mem0 user identifier string.
-    """
-    return f"{MAPLESTORY_USER_PREFIX}_{username}"
-
-
-async def search_memories(client: Memory, query: str, user_id: str) -> dict:
+async def search_memories(client: Memory, query: str, session_id: str) -> dict:
     """
     Search mem0 for memories relevant to the query.
 
     Args:
         client: Initialized Memory client.
         query: Search query (typically the user's prompt).
-        user_id: mem0 user identifier.
+        session_id: Frontend session identifier.
 
     Returns:
         Dict with 'memories' (list of str) and 'relations' (list of str).
         Both empty if search fails.
     """
     try:
-        raw = await asyncio.to_thread(client.search, query, user_id=user_id)
+        raw = await asyncio.to_thread(client.search, query, user_id=session_id)
         memories = [r["memory"] for r in raw.get("results", [])]
         relations = [
             f"{r['source']} {r['relationship']} {r['destination']}"
             for r in raw.get("relations", [])
         ]
         logger.info(
-            "mem0 search returned %d memories, %d relations for %s.",
-            len(memories), len(relations), user_id,
+            "mem0 search returned %d memories, %d relations for session %s.",
+            len(memories), len(relations), session_id,
         )
         return {"memories": memories, "relations": relations}
     except Exception as e:
-        logger.error("mem0 search failed for %s: %s", user_id, e, exc_info=True)
+        logger.error("mem0 search failed for session %s: %s", session_id, e, exc_info=True)
         return {"memories": [], "relations": []}
 
 
-async def add_memory(client: Memory, prompt: str, response: str, user_id: str) -> None:
+async def add_memory(client: Memory, prompt: str, response: str, session_id: str) -> None:
     """
     Persist a conversation turn to mem0 long-term memory.
 
@@ -118,14 +103,14 @@ async def add_memory(client: Memory, prompt: str, response: str, user_id: str) -
         client: Initialized Memory client.
         prompt: Original user prompt.
         response: Full assistant response text.
-        user_id: mem0 user identifier.
+        session_id: Frontend session identifier.
     """
     messages = [
         {"role": "user", "content": prompt},
         {"role": "assistant", "content": response},
     ]
-    await asyncio.to_thread(client.add, messages, user_id=user_id)
-    logger.info("mem0 memory saved for user_id %s.", user_id)
+    await asyncio.to_thread(client.add, messages, user_id=session_id)
+    logger.info("mem0 memory saved for session %s.", session_id)
 
 
 def build_system_prompt(template: str, search_result: dict) -> str:

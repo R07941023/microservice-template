@@ -16,3 +16,4 @@ class ChatRequest(BaseModel):
     prompt: str
     model: str = "gemini"
     history: list[HistoryMessage] = []
+    session_id: str

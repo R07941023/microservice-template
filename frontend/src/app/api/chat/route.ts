@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
     const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
     const prompt = lastUserMessage?.parts.find(p => p.type === 'text')?.text;
     const authorizationHeader = req.headers.get('Authorization') || '';
+    const session_id: string = body.id ?? crypto.randomUUID();
     if (!prompt) {
       return new Response('Prompt is required', { status: 400 });
     }
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
         'Authorization': authorizationHeader,
       },
-      body: JSON.stringify({ prompt, history }),
+      body: JSON.stringify({ prompt, history, session_id }),
     });
 
     // Check if the request to the backend was successful
