@@ -10,7 +10,6 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { X, ArrowUp, Square, Copy, Check } from 'lucide-react';
 
 export default function ChatComponent() {
@@ -134,7 +133,9 @@ export default function ChatComponent() {
                                   <span className="font-mono">{match[1]}</span>
                                   <CopyCodeButton code={String(children).replace(/\n$/, '')} />
                                 </div>
-                                <CodeBlock language={match[1]} code={String(children).replace(/\n$/, '')} />
+                                <pre className="bg-gray-900 text-gray-100 px-4 py-3 text-[13px] font-mono overflow-x-auto leading-relaxed">
+                                  <code>{children}</code>
+                                </pre>
                               </div>
                             );
                           },
@@ -294,21 +295,6 @@ export default function ChatComponent() {
   );
 }
 
-function CodeBlock({ language, code }: { language: string; code: string }) {
-  // Dynamic require avoids ESM style type issues
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const style = require('react-syntax-highlighter/dist/cjs/styles/prism/one-dark');
-  return (
-    <SyntaxHighlighter
-      style={style}
-      language={language}
-      PreTag="div"
-      customStyle={{ margin: 0, borderRadius: 0, fontSize: '13px' }}
-    >
-      {code}
-    </SyntaxHighlighter>
-  );
-}
 
 function CopyCodeButton({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
