@@ -1,18 +1,27 @@
 'use client';
 
-import { useRef, useEffect, useState, FormEvent } from 'react';
+import { useRef, useEffect, useState, FormEvent, useCallback } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { TextStreamChatTransport } from 'ai';
-import { chatTexts } from '@/constants/text';
 import { useAuth } from '@/context/AuthContext';
+import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { X, ArrowUp, Square, Copy, Check } from 'lucide-react';
 
 export default function ChatComponent() {
   const { token } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { messages, sendMessage, status, error } = useChat({
+  const { messages, sendMessage, status, stop } = useChat({
     transport: new TextStreamChatTransport({
       api: '/api/chat',
       headers: (): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {}),
@@ -27,6 +36,14 @@ export default function ChatComponent() {
     }
   }, [messages, isOpen]);
 
+  // Auto-resize textarea
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
+  }, [input]);
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -34,62 +51,284 @@ export default function ChatComponent() {
     setInput('');
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!input.trim() || isLoading) return;
+      sendMessage({ text: input });
+      setInput('');
+    }
+  };
+
+  const copyToClipboard = useCallback(async (text: string, id: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }, []);
+
+  const getMessageText = (msg: { parts: { type: string; text?: string }[] }) =>
+    msg.parts.filter((p) => p.type === 'text').map((p) => p.text ?? '').join('');
+
   return (
-    <div className="fixed bottom-8 right-8 z-[1000]">
+    <div className="fixed bottom-8 right-8 z-[1000] flex flex-col items-end gap-3">
       {/* Chat Window */}
       <div
-        className={`w-[370px] h-[500px] bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col overflow-hidden transition-all duration-300 ease-out origin-bottom-right ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
-        <div className="p-4 bg-gray-50 text-gray-800 flex justify-between items-center border-b border-gray-200">
-          <h2 className="font-semibold text-lg">{chatTexts.headerTitle}</h2>
-          <button onClick={() => setIsOpen(false)} className="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+        className={`w-[700px] bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 ease-out origin-bottom-right ${
+          isOpen ? 'opacity-100 scale-100 h-[600px]' : 'opacity-0 scale-95 pointer-events-none h-0'
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white">
+          <div className="flex items-center gap-2">
+            <Image src="/maplestory-icon.png" alt="logo" width={28} height={28} className="rounded-full" />
+            <span className="font-semibold text-gray-900 text-sm">MapleAI</span>
+          </div>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+          >
+            <X size={16} />
+          </button>
         </div>
-        <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-white">
-          {messages.map((msg) => (
-            <div key={msg.id} className={`flex max-w-[85%] ${msg.role === 'user' ? 'self-end' : 'self-start'}`}>
-              <div className={`py-2 px-4 rounded-2xl whitespace-pre-wrap break-words ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
-                {msg.parts
-                  .filter((part) => part.type === 'text')
-                  .map((part, i) => (
-                    <span key={i}>{part.text}</span>
-                  ))}
-              </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 bg-white">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
+              <Image src="/maplestory-icon.png" alt="logo" width={56} height={56} className="rounded-full" />
+              <p className="text-gray-500 text-sm">How can I help you today?</p>
             </div>
-          ))}
-          {error && (
-            <div className="self-start max-w-[85%]">
-              <div className="py-2 px-4 rounded-2xl bg-gray-200 text-gray-800">
-                {chatTexts.connectionError}
+          )}
+
+          {messages.map((msg) => {
+            const text = getMessageText(msg as { parts: { type: string; text?: string }[] });
+            const isUser = msg.role === 'user';
+
+            return (
+              <div key={msg.id} className={`flex gap-3 items-start ${isUser ? 'justify-end' : 'justify-start'}`}>
+                {!isUser && (
+                  <Image src="/maplestory-icon.png" alt="assistant" width={28} height={28} className="rounded-full flex-shrink-0" />
+                )}
+
+                <div className={`group relative max-w-[85%] ${isUser ? 'order-1' : ''}`}>
+                  {isUser ? (
+                    <div className="bg-gray-100 text-gray-900 rounded-3xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words">
+                      {text}
+                    </div>
+                  ) : (
+                    <div className="text-gray-900 text-sm leading-relaxed">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                        components={{
+                          code({ className, children }) {
+                            const match = /language-(\w+)/.exec(className || '');
+                            const isInline = !match;
+                            return isInline ? (
+                              <code className="bg-gray-100 text-gray-800 rounded px-1.5 py-0.5 text-[13px] font-mono">
+                                {children}
+                              </code>
+                            ) : (
+                              <div className="relative my-4 rounded-xl overflow-hidden border border-gray-200">
+                                <div className="flex items-center justify-between px-4 py-2 bg-gray-800 text-gray-300 text-xs">
+                                  <span className="font-mono">{match[1]}</span>
+                                  <CopyCodeButton code={String(children).replace(/\n$/, '')} />
+                                </div>
+                                <CodeBlock language={match[1]} code={String(children).replace(/\n$/, '')} />
+                              </div>
+                            );
+                          },
+                          p({ children }) {
+                            return <p className="mb-3 last:mb-0">{children}</p>;
+                          },
+                          ul({ children }) {
+                            return <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>;
+                          },
+                          ol({ children }) {
+                            return <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>;
+                          },
+                          li({ children }) {
+                            return <li className="text-sm">{children}</li>;
+                          },
+                          h1({ children }) {
+                            return <h1 className="text-xl font-bold mb-3 mt-4">{children}</h1>;
+                          },
+                          h2({ children }) {
+                            return <h2 className="text-lg font-bold mb-2 mt-3">{children}</h2>;
+                          },
+                          h3({ children }) {
+                            return <h3 className="text-base font-semibold mb-2 mt-3">{children}</h3>;
+                          },
+                          blockquote({ children }) {
+                            return (
+                              <blockquote className="border-l-4 border-gray-300 pl-4 my-3 text-gray-600 italic">
+                                {children}
+                              </blockquote>
+                            );
+                          },
+                          table({ children }) {
+                            return (
+                              <div className="overflow-x-auto my-4">
+                                <table className="min-w-full border-collapse border border-gray-200 text-sm">
+                                  {children}
+                                </table>
+                              </div>
+                            );
+                          },
+                          th({ children }) {
+                            return (
+                              <th className="border border-gray-200 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
+                                {children}
+                              </th>
+                            );
+                          },
+                          td({ children }) {
+                            return (
+                              <td className="border border-gray-200 px-3 py-2 text-gray-700">
+                                {children}
+                              </td>
+                            );
+                          },
+                          a({ href, children }) {
+                            return (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
+                                {children}
+                              </a>
+                            );
+                          },
+                          strong({ children }) {
+                            return <strong className="font-semibold">{children}</strong>;
+                          },
+                          hr() {
+                            return <hr className="my-4 border-gray-200" />;
+                          },
+                        }}
+                      >
+                        {text}
+                      </ReactMarkdown>
+                      <button
+                        onClick={() => copyToClipboard(text, msg.id)}
+                        className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+                      >
+                        {copiedId === msg.id ? (
+                          <><Check size={12} />Copied</>
+                        ) : (
+                          <><Copy size={12} />Copy</>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {isLoading && (
+            <div className="flex gap-3 items-start justify-start">
+              <Image src="/maplestory-icon.png" alt="assistant" width={28} height={28} className="rounded-full flex-shrink-0" />
+              <div className="flex items-center gap-1 pt-2">
+                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
               </div>
             </div>
           )}
+
           <div ref={messagesEndRef} />
         </div>
-        <form onSubmit={handleSubmit} className="flex p-4 border-t border-gray-200 bg-gray-50">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={chatTexts.inputPlaceholder}
-            className="flex-1 py-2 px-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="ml-2 py-2 px-4 rounded-lg border-none bg-blue-500 text-white cursor-pointer hover:bg-blue-600 disabled:bg-blue-300"
+
+        {/* Input Area */}
+        <div className="px-4 pb-4 pt-2 bg-white border-t border-gray-100">
+          <form
+            onSubmit={handleSubmit}
+            className="relative flex items-end gap-2 bg-gray-100 rounded-2xl px-4 py-3"
           >
-            {chatTexts.sendButton}
-          </button>
-        </form>
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask a question..."
+              rows={1}
+              className="flex-1 bg-transparent text-gray-900 text-sm placeholder-gray-500 resize-none focus:outline-none max-h-[200px] overflow-y-auto leading-relaxed"
+            />
+            {isLoading ? (
+              <button
+                type="button"
+                onClick={stop}
+                className="flex-shrink-0 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors"
+              >
+                <Square size={12} fill="currentColor" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="flex-shrink-0 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                <ArrowUp size={16} strokeWidth={2.5} />
+              </button>
+            )}
+          </form>
+          <p className="text-center text-[11px] text-gray-400 mt-2">
+            LLM can make mistakes. Check important info.
+          </p>
+        </div>
       </div>
 
       {/* Chat Bubble */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-16 h-16 bg-blue-500 text-white rounded-full flex justify-center items-center shadow-lg cursor-pointer transition-all duration-300 ease-out hover:scale-110 ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
-        </svg>
+        className={`w-14 h-14 rounded-full overflow-hidden shadow-lg cursor-pointer transition-all duration-300 ease-out hover:scale-110 ${
+          isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'
+        }`}
+      >
+        <Image src="/maplestory-icon.png" alt="open chat" width={56} height={56} />
       </button>
     </div>
+  );
+}
+
+function CodeBlock({ language, code }: { language: string; code: string }) {
+  // Dynamic require avoids ESM style type issues
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const style = require('react-syntax-highlighter/dist/cjs/styles/prism/one-dark');
+  return (
+    <SyntaxHighlighter
+      style={style}
+      language={language}
+      PreTag="div"
+      customStyle={{ margin: 0, borderRadius: 0, fontSize: '13px' }}
+    >
+      {code}
+    </SyntaxHighlighter>
+  );
+}
+
+function CopyCodeButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1 text-gray-400 hover:text-gray-200 transition-colors text-xs"
+    >
+      {copied ? (
+        <><Check size={12} />Copied</>
+      ) : (
+        <><Copy size={12} />Copy code</>
+      )}
+    </button>
   );
 }
