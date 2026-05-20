@@ -14,6 +14,5 @@ class ChatRequest(BaseModel):
     """Chat request payload."""
 
     prompt: str
-    model: str = "gemini"
     history: list[HistoryMessage] = []
     session_id: str

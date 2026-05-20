@@ -99,7 +99,6 @@ app.include_router(health_router)
 
 async def stream_chat_generator(
     prompt: str,
-    model: str,
     user: User,
     background_tasks: BackgroundTasks,
     history: list = None,
@@ -113,7 +112,6 @@ async def stream_chat_generator(
 
     Args:
         prompt: User's chat prompt.
-        model: LLM model name to use.
         user: Current authenticated user.
         background_tasks: FastAPI background tasks.
         history: Recent conversation turns to include as context.
@@ -176,7 +174,7 @@ async def stream_chat(
     Stream chat responses from LangChain agent.
 
     Args:
-        request: Chat request with prompt and optional model.
+        request: Chat request with prompt.
         background_tasks: FastAPI background tasks.
         user: Current authenticated user from JWT.
 
@@ -190,7 +188,6 @@ async def stream_chat(
 
     generator = stream_chat_generator(
         prompt=request.prompt,
-        model=request.model or settings.default_chat_model,
         user=user,
         background_tasks=background_tasks,
         history=request.history,
