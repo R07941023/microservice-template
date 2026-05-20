@@ -13,10 +13,11 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
 export default function ChatComponent() {
-  const { token } = useAuth();
+  const { token, refreshToken } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -25,6 +26,10 @@ export default function ChatComponent() {
       api: '/api/chat',
       headers: (): Record<string, string> => (token ? { Authorization: `Bearer ${token}` } : {}),
     }),
+    onError: async () => {
+      await refreshToken();
+      setChatError('Something went wrong. Your session has been refreshed — please try again.');
+    },
   });
 
   const isLoading = status === 'submitted' || status === 'streaming';
@@ -45,6 +50,7 @@ export default function ChatComponent() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    setChatError(null);
     sendMessage({ text: input });
     setInput('');
   };
@@ -166,6 +172,15 @@ export default function ChatComponent() {
               </div>
             );
           })}
+
+          {chatError && (
+            <div className="flex gap-3 items-start justify-start">
+              <Image src="/maplestory-icon.png" alt="assistant" width={28} height={28} className="rounded-full flex-shrink-0" />
+              <div className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-2xl px-4 py-2.5">
+                {chatError}
+              </div>
+            </div>
+          )}
 
           {isLoading && (
             <div className="flex gap-3 items-start justify-start">
