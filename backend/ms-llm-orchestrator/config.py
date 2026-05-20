@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     litellm_host: Optional[str] = None
 
     # mem0 models
-    mem0_llm_model: str = "gemini-2.5-flash"
-    mem0_embedder_model: str = "models/gemini-embedding-001"
+    mem0_llm_model: str = "gemini/gemini-2.5-flash"
+    mem0_embedder_model: str = "gemini-embedding-001"
     mem0_embedding_dims: int = 1536
 
     class Config:

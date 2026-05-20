@@ -4,13 +4,17 @@ import logging
 from typing import Any, Dict, Optional
 
 import jwt
-from fastapi import Header, HTTPException
+from fastapi import HTTPException, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient
 from pydantic import BaseModel
 
 from .config import KEYCLOAK_REALM_URL, JWT_AUDIENCE, get_jwks_url
 
 logger = logging.getLogger(__name__)
+
+
+http_bearer = HTTPBearer(auto_error=False)
 
 
 class User(BaseModel):
@@ -20,12 +24,12 @@ class User(BaseModel):
     email: Optional[str] = None
 
 
-async def get_current_user(authorization: Optional[str] = Header(default=None)) -> User:
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Security(http_bearer)) -> User:
     """
     Verify JWT and extract current user from authorization header.
 
     Args:
-        authorization: JWT authorization header value.
+        credentials: HTTP Bearer credentials from Authorization header.
 
     Returns:
         User object with name and email from JWT claims.
@@ -33,6 +37,7 @@ async def get_current_user(authorization: Optional[str] = Header(default=None)) 
     Raises:
         HTTPException: 401 if token is invalid or missing.
     """
+    authorization = f"Bearer {credentials.credentials}" if credentials else None
     token_data = verify_jwt_from_header(
         authorization,
         jwks_url=get_jwks_url(),

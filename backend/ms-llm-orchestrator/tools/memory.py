@@ -45,17 +45,16 @@ def build_mem0_client(settings: Settings) -> Memory:
             },
         },
         "llm": {
-            "provider": "gemini",
+            "provider": "openai",
             "config": {
-                "api_key": os.environ["GEMINI_API_KEY"],
                 "model": settings.mem0_llm_model,
                 "temperature": 0.2,
+                "openai_base_url": settings.litellm_host,
             },
         },
         "embedder": {
             "provider": "gemini",
             "config": {
-                "api_key": os.environ["GEMINI_API_KEY"],
                 "model": settings.mem0_embedder_model,
                 "embedding_dims": settings.mem0_embedding_dims,
             },
