@@ -76,7 +76,7 @@ async def lifespan(app: FastAPI):
             model=settings.default_chat_model,
             streaming=True
         )
-        app_state.langchain_agent = create_agent(llm, tools=tools)
+        app_state.langchain_agent = create_agent(llm, tools=[])
         logger.info("LangChain LangGraph Agent initialized.")
 
         # 3. Initialize mem0 Memory client
