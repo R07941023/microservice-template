@@ -14,7 +14,7 @@ class TestSettings:
         settings = Settings()
 
         assert settings.default_chat_model == "gemini/gemini-2.5-flash"
-        assert "helpful assistant" in settings.system_prompt.lower()
+        assert "helpful" in settings.system_prompt_template.lower()
 
     def test_settings_from_env(self):
         with patch.dict(os.environ, {
