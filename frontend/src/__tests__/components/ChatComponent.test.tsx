@@ -1,52 +1,47 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ChatComponent from '@/components/ChatComponent';
 
-// Mock the AuthContext
-const mockAuthFetch = vi.fn();
-
+// Mock useAuth
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
-    authFetch: mockAuthFetch,
+    token: 'mock-token',
+    refreshToken: vi.fn(),
+    authFetch: vi.fn(),
   }),
 }));
 
-// Mock chat texts
-vi.mock('@/constants/text', () => ({
-  chatTexts: {
-    headerTitle: 'LLM Assistant',
-    inputPlaceholder: 'Input your message...',
-    sendButton: 'Send',
-    connectionError: 'Connection Failed.',
-  },
+// Mock useChat from @ai-sdk/react
+const mockSendMessage = vi.fn();
+const mockStop = vi.fn();
+let mockMessages: { id: string; role: string; parts: { type: string; text: string }[] }[] = [];
+let mockStatus = 'ready';
+
+vi.mock('@ai-sdk/react', () => ({
+  useChat: () => ({
+    messages: mockMessages,
+    sendMessage: mockSendMessage,
+    status: mockStatus,
+    stop: mockStop,
+  }),
+}));
+
+// Mock next/image
+vi.mock('next/image', () => ({
+  // eslint-disable-next-line @next/next/no-img-element
+  default: ({ alt }: { alt: string }) => <img alt={alt} />,
 }));
 
 describe('ChatComponent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Default mock implementation for streaming
-    mockAuthFetch.mockImplementation(async () => {
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream({
-        async start(controller) {
-          controller.enqueue(encoder.encode('Hello, '));
-          controller.enqueue(encoder.encode('this is a test response.'));
-          controller.close();
-        },
-      });
-
-      return {
-        body: stream,
-      };
-    });
+    mockMessages = [];
+    mockStatus = 'ready';
   });
 
   it('should render chat bubble button', () => {
     render(<ChatComponent />);
-
-    // The chat bubble button should be visible initially
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
   });
@@ -55,30 +50,28 @@ describe('ChatComponent', () => {
     const user = userEvent.setup();
     render(<ChatComponent />);
 
-    // Find and click the chat bubble (the last button which is the bubble)
     const buttons = screen.getAllByRole('button');
     const chatBubble = buttons[buttons.length - 1];
     await user.click(chatBubble);
 
-    expect(screen.getByText('LLM Assistant')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Input your message...')).toBeInTheDocument();
+    expect(screen.getByText('MapleAI')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Ask a question...')).toBeInTheDocument();
   });
 
   it('should close chat window when close button is clicked', async () => {
     const user = userEvent.setup();
-    render(<ChatComponent />);
+    const { container } = render(<ChatComponent />);
 
-    // Open chat
     const buttons = screen.getAllByRole('button');
     const chatBubble = buttons[buttons.length - 1];
     await user.click(chatBubble);
 
-    // Find and click close button
-    const closeButton = screen.getByText('×');
+    // Close button is the first button inside the header (border-b section)
+    const header = container.querySelector('.border-b.border-gray-200') as HTMLElement;
+    const closeButton = within(header).getByRole('button');
     await user.click(closeButton);
 
-    // Chat window should have pointer-events-none class (closed state)
-    const chatWindow = screen.getByText('LLM Assistant').closest('div[class*="w-[370px]"]');
+    const chatWindow = screen.getByText('MapleAI').closest('div[class*="w-[700px]"]');
     expect(chatWindow).toHaveClass('pointer-events-none');
   });
 
@@ -86,153 +79,78 @@ describe('ChatComponent', () => {
     const user = userEvent.setup();
     render(<ChatComponent />);
 
-    // Open chat
     const buttons = screen.getAllByRole('button');
     const chatBubble = buttons[buttons.length - 1];
     await user.click(chatBubble);
 
-    // Try to submit empty message
-    const sendButton = screen.getByRole('button', { name: 'Send' });
-    await user.click(sendButton);
+    // Press Enter with empty input — handler guards against empty submit
+    await user.keyboard('{Enter}');
 
-    expect(mockAuthFetch).not.toHaveBeenCalled();
+    expect(mockSendMessage).not.toHaveBeenCalled();
   });
 
-  it('should send message and display user message', async () => {
+  it('should send message when submitted', async () => {
     const user = userEvent.setup();
     render(<ChatComponent />);
 
-    // Open chat
     const buttons = screen.getAllByRole('button');
     const chatBubble = buttons[buttons.length - 1];
     await user.click(chatBubble);
 
-    // Type message
-    const input = screen.getByPlaceholderText('Input your message...');
+    const input = screen.getByPlaceholderText('Ask a question...');
     await user.type(input, 'Hello AI');
 
-    // Submit message
-    const sendButton = screen.getByRole('button', { name: 'Send' });
-    await user.click(sendButton);
+    await user.keyboard('{Enter}');
 
-    // User message should appear
-    expect(screen.getByText('Hello AI')).toBeInTheDocument();
+    expect(mockSendMessage).toHaveBeenCalledWith({ text: 'Hello AI' });
   });
 
-  it('should display streaming response', async () => {
-    const user = userEvent.setup();
+  it('should display messages from useChat', async () => {
+    mockMessages = [
+      { id: '1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
+      { id: '2', role: 'assistant', parts: [{ type: 'text', text: 'Hi there!' }] },
+    ];
+
     render(<ChatComponent />);
 
-    // Open chat
     const buttons = screen.getAllByRole('button');
-    const chatBubble = buttons[buttons.length - 1];
-    await user.click(chatBubble);
+    await userEvent.setup().click(buttons[buttons.length - 1]);
 
-    // Type and send message
-    const input = screen.getByPlaceholderText('Input your message...');
-    await user.type(input, 'Hello');
-
-    const sendButton = screen.getByRole('button', { name: 'Send' });
-    await user.click(sendButton);
-
-    // Wait for streaming response
-    await waitFor(() => {
-      expect(screen.getByText(/this is a test response/)).toBeInTheDocument();
-    });
-  });
-
-  it('should handle connection error', async () => {
-    mockAuthFetch.mockRejectedValue(new Error('Network error'));
-
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const user = userEvent.setup();
-    render(<ChatComponent />);
-
-    // Open chat
-    const buttons = screen.getAllByRole('button');
-    const chatBubble = buttons[buttons.length - 1];
-    await user.click(chatBubble);
-
-    // Type and send message
-    const input = screen.getByPlaceholderText('Input your message...');
-    await user.type(input, 'Hello');
-
-    const sendButton = screen.getByRole('button', { name: 'Send' });
-    await user.click(sendButton);
-
-    // Wait for error message
-    await waitFor(() => {
-      expect(screen.getByText('Connection Failed.')).toBeInTheDocument();
-    });
-
-    consoleSpy.mockRestore();
+    expect(screen.getByText('Hello')).toBeInTheDocument();
+    expect(screen.getByText('Hi there!')).toBeInTheDocument();
   });
 
   it('should clear input after sending message', async () => {
     const user = userEvent.setup();
     render(<ChatComponent />);
 
-    // Open chat
     const buttons = screen.getAllByRole('button');
-    const chatBubble = buttons[buttons.length - 1];
-    await user.click(chatBubble);
+    await user.click(buttons[buttons.length - 1]);
 
-    // Type and send message
-    const input = screen.getByPlaceholderText('Input your message...') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('Ask a question...') as HTMLInputElement;
     await user.type(input, 'Hello');
     expect(input.value).toBe('Hello');
 
-    const sendButton = screen.getByRole('button', { name: 'Send' });
-    await user.click(sendButton);
+    await user.keyboard('{Enter}');
 
-    // Input should be cleared
     expect(input.value).toBe('');
   });
 
-  it('should submit on form submit', async () => {
-    const user = userEvent.setup();
+  it('should show loading state when streaming', async () => {
+    mockStatus = 'streaming';
     render(<ChatComponent />);
 
-    // Open chat
     const buttons = screen.getAllByRole('button');
-    const chatBubble = buttons[buttons.length - 1];
-    await user.click(chatBubble);
+    await userEvent.setup().click(buttons[buttons.length - 1]);
 
-    // Type message
-    const input = screen.getByPlaceholderText('Input your message...');
-    await user.type(input, 'Test message{enter}');
-
-    // Should have called authFetch
-    expect(mockAuthFetch).toHaveBeenCalledWith('/api/chat', {
-      method: 'POST',
-      body: JSON.stringify({ prompt: 'Test message' }),
-    });
+    // Loading dots should be visible
+    const dots = document.querySelectorAll('.animate-bounce');
+    expect(dots.length).toBeGreaterThan(0);
   });
 
-  it('should handle missing response body', async () => {
-    mockAuthFetch.mockResolvedValue({ body: null });
-
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const user = userEvent.setup();
+  it('should render without crashing with mocked useChat', async () => {
     render(<ChatComponent />);
-
-    // Open chat
-    const buttons = screen.getAllByRole('button');
-    const chatBubble = buttons[buttons.length - 1];
-    await user.click(chatBubble);
-
-    // Type and send message
-    const input = screen.getByPlaceholderText('Input your message...');
-    await user.type(input, 'Hello');
-
-    const sendButton = screen.getByRole('button', { name: 'Send' });
-    await user.click(sendButton);
-
-    // Wait for error handling
-    await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalled();
-    });
-
-    consoleSpy.mockRestore();
+    // Component renders with the useChat mock without throwing
+    expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
   });
 });
