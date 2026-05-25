@@ -69,8 +69,8 @@ class TestStreamChat:
 
             assert response.status_code == 422
 
-    def test_stream_chat_default_model(self, client, valid_jwt_token, mock_langchain_agent):
-        """Test stream chat uses default model when not specified."""
+    def test_stream_chat_default_history(self, client, valid_jwt_token, mock_langchain_agent):
+        """Test stream chat works when history is not specified."""
         async def mock_astream(*args, **kwargs):
             class MockMessage:
                 content = "Response"
@@ -84,7 +84,7 @@ class TestStreamChat:
 
             response = client.post(
                 "/stream-chat",
-                json={"prompt": "Hello"},
+                json={"prompt": "Hello", "session_id": "test-session-123"},
                 headers={"Authorization": valid_jwt_token}
             )
 
@@ -97,7 +97,10 @@ class TestGetCurrentUser:
     def test_get_current_user_with_valid_token(self, valid_jwt_token):
         """Test extracting user from valid JWT."""
         from utils.auth import get_current_user
+        from fastapi.security import HTTPAuthorizationCredentials
         import asyncio
+
+        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="sometoken")
 
         # Mock the JWT verification to return decoded token data
         with patch("utils.auth.verify_jwt_from_header") as mock_verify:
@@ -106,7 +109,7 @@ class TestGetCurrentUser:
                 "email": "test@example.com"
             }
 
-            user = asyncio.run(get_current_user(valid_jwt_token))
+            user = asyncio.run(get_current_user(credentials))
 
             assert user.name == "Test User"
             assert user.email == "test@example.com"

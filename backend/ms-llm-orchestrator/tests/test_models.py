@@ -40,18 +40,18 @@ class TestChatRequest:
     """Tests for ChatRequest model."""
 
     def test_valid_chat_request(self):
-        request = ChatRequest(prompt="Hello", model="gemini")
+        request = ChatRequest(prompt="Hello", session_id="abc-123")
         assert request.prompt == "Hello"
-        assert request.model == "gemini"
+        assert request.session_id == "abc-123"
 
-    def test_chat_request_default_model(self):
-        request = ChatRequest(prompt="Hello")
-        assert request.model == "gemini"
+    def test_chat_request_default_history(self):
+        request = ChatRequest(prompt="Hello", session_id="abc-123")
+        assert request.history == []
 
     def test_chat_request_missing_prompt(self):
         with pytest.raises(ValidationError):
-            ChatRequest(model="gemini")
+            ChatRequest(session_id="abc-123")
 
-    def test_chat_request_custom_model(self):
-        request = ChatRequest(prompt="Hello", model="gpt-4")
-        assert request.model == "gpt-4"
+    def test_chat_request_missing_session_id(self):
+        with pytest.raises(ValidationError):
+            ChatRequest(prompt="Hello")

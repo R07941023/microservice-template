@@ -16,6 +16,7 @@ interface AuthContextType {
   loading: boolean;
   login: () => void;
   logout: () => void;
+  refreshToken: () => Promise<void>;
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
@@ -34,6 +35,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(() => {
     keycloak.logout();
+  }, []);
+
+  const refreshToken = useCallback(async () => {
+    try {
+      const refreshed = await keycloak.updateToken(0);
+      if (refreshed) {
+        setToken(keycloak.token || null);
+      }
+    } catch {
+      keycloak.logout();
+    }
   }, []);
 
   // Global fetch wrapper
@@ -111,7 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [isKeycloakInitialized]); // Add isKeycloakInitialized to dependency array
 
   return (
-    <AuthContext.Provider value={{ user, token, authenticated, loading, login, logout, authFetch }}>
+    <AuthContext.Provider value={{ user, token, authenticated, loading, login, logout, refreshToken, authFetch }}>
       {children}
     </AuthContext.Provider>
   );

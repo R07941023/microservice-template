@@ -4,6 +4,12 @@ import { NextRequest } from 'next/server';
 // Store original fetch
 const originalFetch = global.fetch;
 
+// Helper to build AI SDK messages format
+const makeBody = (text: string, id = 'test-session-id') => JSON.stringify({
+  messages: [{ role: 'user', parts: [{ type: 'text', text }] }],
+  id,
+});
+
 describe('chat API Route', () => {
   const mockFetch = vi.fn();
 
@@ -50,7 +56,7 @@ describe('chat API Route', () => {
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ prompt: 'Hello AI' }),
+      body: makeBody('Hello AI'),
       headers: {
         Authorization: 'Bearer token',
       },
@@ -66,7 +72,7 @@ describe('chat API Route', () => {
           'Content-Type': 'application/json',
           Authorization: 'Bearer token',
         }),
-        body: JSON.stringify({ prompt: 'Hello AI' }),
+        body: expect.stringContaining('"prompt":"Hello AI"'),
       })
     );
   });
@@ -89,12 +95,12 @@ describe('chat API Route', () => {
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ prompt: 'Test' }),
+      body: makeBody('Test'),
     });
 
     const response = await POST(request);
 
-    expect(response.headers.get('Content-Type')).toBe('text/plain; charset=utf-8');
+    expect(response.headers.get('Content-Type')?.toLowerCase().replace(/\s/g, '')).toBe('text/plain;charset=utf-8');
   });
 
   it('should handle orchestrator service error', async () => {
@@ -110,7 +116,7 @@ describe('chat API Route', () => {
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ prompt: 'Test' }),
+      body: makeBody('Test'),
     });
 
     const response = await POST(request);
@@ -130,7 +136,7 @@ describe('chat API Route', () => {
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ prompt: 'Test' }),
+      body: makeBody('Test'),
     });
 
     const response = await POST(request);
@@ -148,7 +154,7 @@ describe('chat API Route', () => {
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ prompt: 'Test' }),
+      body: makeBody('Test'),
     });
 
     const response = await POST(request);
@@ -178,7 +184,7 @@ describe('chat API Route', () => {
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ prompt: 'Test' }),
+      body: makeBody('Test'),
       headers: {
         Authorization: 'Bearer my-jwt-token',
       },
