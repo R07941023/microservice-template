@@ -29,7 +29,7 @@ spec:
             - name: PGVECTOR_HOST
               value: postgres.infra-net.svc.cluster.local
             - name: PGVECTOR_PORT
-              value: 5432
+              value: "5432"
             - name: PGVECTOR_DBNAME
               value: ai_agent
             - name: PGVECTOR_COLLECTION
