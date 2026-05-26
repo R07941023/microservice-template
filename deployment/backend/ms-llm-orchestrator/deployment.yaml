@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ms-llm-orchestrator
-          image: yenyinglu/ms-llm-orchestrator:c7ed0561
+          image: yenyinglu/ms-llm-orchestrator:736e5882
           ports:
             - containerPort: 8000
           env:
@@ -26,6 +26,10 @@ spec:
               value: "http://litellm.ai.svc.cluster.local:4000"
             - name: MCP_HOST
               value: "http://mcp-context-forge.ai.svc.cluster.local:4444/servers/1a6556c61e9a400ea537e7e73c05a2db/mcp"
+            - name: PGVECTOR_HOST
+              value: postgres.infra-net.svc.cluster.local
+            - name: PGVECTOR_PORT
+              value: 5432
             - name: PGVECTOR_DBNAME
               value: ai_agent
             - name: PGVECTOR_COLLECTION
